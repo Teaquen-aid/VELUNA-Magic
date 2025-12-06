@@ -68,7 +68,8 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
             location: { lat: 0, lng: 0, alt: 0 },
             temperature: 20,
             humidity: 50,
-            wDensity: 1000
+            wDensity: 1000,
+            weather: 'SUNNY'
         };
 
         const defaultCaster: CasterStatus = {

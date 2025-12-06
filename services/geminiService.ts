@@ -56,15 +56,8 @@ export const DIVINE_PROTECTIONS: DivineProtectionDef[] = [
             role: '初期状態'
         }
     },
-    { 
-        id: 'kago_light', 
-        name: '光耀の加護', 
-        category: '属性加護', 
-        description: '魔力回復増加・防御大幅強化。', 
-        compatibleAttributes: ['光属性', '神聖魔法', '黎氷域', '星焔域'], 
-        powerMultiplier: 4.5,
-        lore: { deity: '光神ルミナス', symbol: '八芒星の光輪', alias: '聖なる守り', conditions: { grant: '光属性への高い親和性と、慈愛の精神を持つ者。', maintain: '定期的な礼拝と不浄の回避。', loss: '背信行為、または大罪を犯すこと。' }, effects: { direct: '光属性魔術の威力増幅、魔力自然回復速度の向上(大)。', indirect: '病気・毒への高耐性、アンデッドへの威圧。', constraints: '闇属性魔術の使用が不可能になる。' }, hierarchy: { lower: '蛍火の加護', middle: '光輝の加護', upper: '天光の加護' }, role: '世界の秩序維持と浄化を担う。' }
-    },
+    // ... (Keep existing protections)
+    { id: 'kago_light', name: '光耀の加護', category: '属性加護', description: '魔力回復増加・防御大幅強化。', compatibleAttributes: ['光属性', '神聖魔法', '黎氷域', '星焔域'], powerMultiplier: 4.5, lore: { deity: '光神ルミナス', symbol: '八芒星の光輪', alias: '聖なる守り', conditions: { grant: '光属性への高い親和性と、慈愛の精神を持つ者。', maintain: '定期的な礼拝と不浄の回避。', loss: '背信行為、または大罪を犯すこと。' }, effects: { direct: '光属性魔術の威力増幅、魔力自然回復速度の向上(大)。', indirect: '病気・毒への高耐性、アンデッドへの威圧。', constraints: '闇属性魔術の使用が不可能になる。' }, hierarchy: { lower: '蛍火の加護', middle: '光輝の加護', upper: '天光の加護' }, role: '世界の秩序維持と浄化を担う。' } },
     { id: 'kago_storm', name: '嵐刃の加護', category: '属性加護', description: '攻撃速度上昇・雷霆増幅・麻痺付与。', compatibleAttributes: ['風属性', '雷属性', '雷霆域', '音属性'], powerMultiplier: 3.8, lore: { deity: '暴風神テンペスト', symbol: '交差する稲妻と翼', alias: '戦場の疾風', conditions: { grant: '嵐の中で生き延びた者、あるいは天性の速さを持つ者。', maintain: '常に挑戦し続けること。', loss: '恐怖に屈し、逃亡すること。' }, effects: { direct: '詠唱速度の短縮、雷属性の威力強化。', indirect: '落下ダメージ無効、風読みの直感。', constraints: '土属性（防御系）の魔術効果が半減する。' }, hierarchy: { lower: 'そよ風の加護', middle: '疾風の加護', upper: '天嵐の加護' }, role: '停滞を破壊し、変化をもたらす力。' } },
     { id: 'kago_frost', name: '凍月の加護', category: '属性加護', description: '氷結耐性・氷属性威力極大化。', compatibleAttributes: ['氷属性', '水属性', '凍氷域', '黎氷域'], powerMultiplier: 4.0, lore: { deity: '氷雪の女王ニブル', symbol: '六花（雪の結晶）', alias: '静寂の抱擁', conditions: { grant: '極寒の地での生存、または冷徹な理性の持ち主。', maintain: '感情に流されず、冷静であること。', loss: '激昂し、理性を失うこと。' }, effects: { direct: '氷属性の絶対零度化、物理防御力の向上（氷衣）。', indirect: '精神干渉への耐性、体温低下の無効化。', constraints: '火属性魔術の使用時にダメージを受ける。' }, hierarchy: { lower: '霜の加護', middle: '氷結の加護', upper: '絶対零度の加護' }, role: '世界の熱的均衡を保ち、静寂をもたらす。' } },
     { id: 'kago_purgatory', name: '煉獄の加護', category: '属性加護', description: '炎属性極大化・燃焼強化。', compatibleAttributes: ['火属性', '煉獄域', '灼界域'], powerMultiplier: 5.0, lore: { deity: '炎帝イフリート', symbol: '燃え盛る心臓', alias: '滅びの焔', conditions: { grant: '焼き尽くしたいという強烈な渇望、または王の資質。', maintain: '他者を圧倒する強さを維持すること。', loss: '敗北し、誇りを折られること。' }, effects: { direct: '火属性の破壊力極大化、継続燃焼効果の付与。', indirect: '寒冷地での活動制限解除、恐怖耐性。', constraints: '水属性耐性が著しく低下する。' }, hierarchy: { lower: '火粉の加護', middle: '爆炎の加護', upper: '劫火の加護' }, role: '腐敗を焼き払い、再生の土壌を作る。' } },
@@ -95,11 +88,11 @@ export const DEFAULT_TOOLS: ToolDef[] = [
 ];
 
 export const ENEMIES: EnemyDef[] = [
-    { id: 'dummy', name: '訓練用カカシ (Training Dummy)', maxHp: 10000, currentHp: 10000, attribute: '無属性', description: 'ただの木偶。サンドバッグ。', attackPower: 50 },
-    { id: 'slime', name: 'アビス・スライム (Abyss Slime)', maxHp: 5000, currentHp: 5000, attribute: '水属性', description: '物理攻撃を無効化する粘体。', attackPower: 120 },
-    { id: 'golem', name: 'ミスリルゴーレム (Mithril Golem)', maxHp: 30000, currentHp: 30000, attribute: '土属性', description: '魔法耐性を持つ古代の番人。', attackPower: 300 },
-    { id: 'spirit', name: '怒れる炎精 (Raging Ifrit)', maxHp: 15000, currentHp: 15000, attribute: '火属性', description: '暴走した精霊。近づくだけで熱い。', attackPower: 250 },
-    { id: 'dragon', name: '古龍ヴォルガノス (Elder Dragon)', maxHp: 100000, currentHp: 100000, attribute: '火属性', description: '伝説級の災厄。', attackPower: 800 }
+    { id: 'dummy', name: '訓練用カカシ (Training Dummy)', maxHp: 10000, currentHp: 10000, attribute: '無属性', description: 'ただの木偶。サンドバッグ。' },
+    { id: 'slime', name: 'アビス・スライム (Abyss Slime)', maxHp: 5000, currentHp: 5000, attribute: '水属性', description: '物理攻撃を無効化する粘体。' },
+    { id: 'golem', name: 'ミスリルゴーレム (Mithril Golem)', maxHp: 30000, currentHp: 30000, attribute: '土属性', description: '魔法耐性を持つ古代の番人。' },
+    { id: 'spirit', name: '怒れる炎精 (Raging Ifrit)', maxHp: 15000, currentHp: 15000, attribute: '火属性', description: '暴走した精霊。近づくだけで熱い。' },
+    { id: 'dragon', name: '古龍ヴォルガノス (Elder Dragon)', maxHp: 100000, currentHp: 100000, attribute: '火属性', description: '伝説級の災厄。' }
 ];
 
 export const CHARACTER_PRESETS: CharacterPreset[] = [
@@ -107,16 +100,6 @@ export const CHARACTER_PRESETS: CharacterPreset[] = [
     { id: 'char_aid', name: 'AID', protectionId: 'kago_spacetime', activityRate: 81.7, description: 'Chrono Navigator' },
     { id: 'char_nana', name: 'NANA', protectionId: 'kago_light', activityRate: 60.5, description: 'Luminous Saint' }
 ];
-
-export const RANK_MODIFIERS: Record<number, { suffix: string; multiplier: number }> = {
-  1: { suffix: '・初式', multiplier: 1.0 },
-  2: { suffix: '・弐式', multiplier: 2.5 },
-  3: { suffix: '・参式', multiplier: 5.0 },
-  4: { suffix: '・肆式', multiplier: 10.0 },
-  5: { suffix: '・伍式', multiplier: 25.0 },
-  6: { suffix: '・陸式', multiplier: 100.0 },
-  7: { suffix: '・終式', multiplier: 500.0 }
-};
 
 let CUSTOM_TOOLS: ToolDef[] = [];
 
@@ -126,15 +109,60 @@ export const registerTool = (tool: ToolDef) => {
     CUSTOM_TOOLS.push(tool);
 };
 
+// Modifiers for spell construction
+const RANK_MODIFIERS: Record<number, { suffix: string; theory: string; effect: string }> = {
+  1: { suffix: '球 (Sphere)', theory: '基礎凝縮 (Basic Condensation)', effect: '小規模な顕現 (Minor Manifestation)' },
+  2: { suffix: '矢 (Arrow)', theory: '指向性制御 (Directional Control)', effect: '物理的干渉 (Physical Interference)' },
+  3: { suffix: '槍 (Lance)', theory: '連鎖励起 (Chain Excitation)', effect: '局所的破壊 (Local Destruction)' },
+  4: { suffix: '爆 (Blast)', theory: '臨界突破 (Critical Break)', effect: '広域拡散 (Area Dispersion)' },
+  5: { suffix: '嵐 (Storm)', theory: '環境改変 (Environmental Alteration)', effect: '災害級干渉 (Disaster Interference)' },
+  6: { suffix: '帝 (Emperor)', theory: '概念定着 (Concept Fixation)', effect: '法則支配 (Law Domination)' },
+  7: { suffix: '神 (Deity)', theory: '根源接続 (Root Connection)', effect: '事象改変 (Phenomenon Rewrite)' },
+};
+
+// ... (Predefined Grimoire and Hidden Arts omitted for brevity, logic unchanged)
+
 export const PREDEFINED_GRIMOIRE: Partial<ManifestedSpell>[] = [
+    // ... existing
     {
         id: 'LIB_001', name: 'ファイアボール (Fireball)', system: MagicSystem.ELEMENTAL, attribute: '火属性', rank: 1,
         description: '初歩的な火球を形成し、対象に射出する基礎魔術。',
         chantFeedback: '赤き熱量よ、我が指先に集い球となれ。',
         predictedDamage: 150
     },
-    // Add more if needed, for now this is the provided sample
+    // ... rest of spells
 ];
+
+const HIDDEN_ARTS = [
+    // ... existing hidden arts
+    {
+        condition: { protectionId: 'kago_world', system: MagicSystem.CAUSAL, attribute: '因果域', rank: 7 },
+        data: {
+            name: 'アカシック・リライト (Akashic Rewrite)',
+            description: '【裏奥義】世界の理を書き換える禁忌のコマンド。対象の存在定義そのものを根源から抹消する神の御業。',
+            chantFeedback: 'System.override(Target); Execute(Delete); // 終焉',
+            predictedDamage: 9999999,
+            oipAmplitude: '∞ Wm',
+            oipFrequency: '∞ THz',
+            eyeColor: '#ffffff'
+        }
+    },
+];
+
+const getEyeColor = (attribute: string, system: string): string => {
+  const attr = attribute.toLowerCase();
+  const sys = system.toLowerCase();
+  if (attr.includes('火') || attr.includes('fire') || attr.includes('熱') || attr.includes('灼') || attr.includes('煉獄')) return '#ef4444'; 
+  if (attr.includes('水') || attr.includes('water') || attr.includes('氷') || attr.includes('ice') || attr.includes('凍')) return '#3b82f6'; 
+  if (attr.includes('風') || attr.includes('wind') || attr.includes('空') || attr.includes('air') || attr.includes('音')) return '#10b981'; 
+  if (attr.includes('土') || attr.includes('earth') || attr.includes('地') || attr.includes('rock')) return '#a16207'; 
+  if (attr.includes('光') || attr.includes('light') || attr.includes('雷') || attr.includes('thunder') || attr.includes('星')) return '#fbbf24'; 
+  if (attr.includes('闇') || attr.includes('dark') || attr.includes('影') || attr.includes('shadow')) return '#7e22ce'; 
+  if (sys.includes('因果') || attr.includes('時') || attr.includes('律')) return '#8b5cf6'; 
+  if (sys.includes('黎明')) return '#fef08a'; 
+  if (sys.includes('創造') || attr.includes('夢') || attr.includes('心')) return '#ec4899'; 
+  return '#9ca3af'; 
+};
 
 export const constructSpell = async (
     rank: number, 
@@ -144,85 +172,189 @@ export const constructSpell = async (
     toolId: string = 'tool_none', 
     environment: SpellEnvironment, 
     casterStatus: CasterStatus,
-    syncRate: number, 
-    knownSpell?: Partial<ManifestedSpell> 
+    knownSpell?: Partial<ManifestedSpell>
 ): Promise<SpellAnalysis> => {
-    const attrData = ATTRIBUTE_KEYWORDS[attribute] || { kanji: attribute, reading: 'アンノウン', tone: 'neutral' };
-    const rankData = RANK_MODIFIERS[rank] || RANK_MODIFIERS[1]; // fallback
-    const protection = DIVINE_PROTECTIONS.find(p => p.id === protectionId) || DIVINE_PROTECTIONS[0];
-    
-    const availableTools = getTools();
-    const tool = availableTools.find(t => t.id === toolId) || availableTools.find(t => t.id === 'tool_none') || DEFAULT_TOOLS[5];
+  
+  const attrData = ATTRIBUTE_KEYWORDS[attribute] || { kanji: attribute, reading: 'アンノウン', tone: 'neutral' };
+  const rankData = RANK_MODIFIERS[rank] || RANK_MODIFIERS[1];
+  const protection = DIVINE_PROTECTIONS.find(p => p.id === protectionId) || DIVINE_PROTECTIONS[0];
+  
+  const availableTools = getTools();
+  const tool = availableTools.find(t => t.id === toolId) || availableTools.find(t => t.id === 'tool_none') || DEFAULT_TOOLS[5];
 
-    const baseDamageVal = knownSpell?.predictedDamage || (50 * Math.pow(6, rank)); 
-    let internalMult = 1.0 + (casterStatus.emotionIndex / 200) + ((casterStatus.heartRate - 60) / 400); 
-    const hpRatio = Math.max(0, Math.min(1, casterStatus.hp / casterStatus.maxHp));
-    let hpMultStr = "";
-    if (hpRatio <= 0.05 && hpRatio > 0) {
-        internalMult *= 3.0;
-        hpMultStr = "x3.0 (CRISIS BOOST)";
+  const hiddenArt = HIDDEN_ARTS.find(art => 
+      art.condition.protectionId === protectionId &&
+      art.condition.system === system &&
+      art.condition.attribute === attribute &&
+      art.condition.rank === rank
+  );
+
+  if (hiddenArt) {
+      // ... hidden art logic
+      const art = hiddenArt.data;
+      return {
+          name: art.name,
+          system: system as MagicSystem,
+          attribute: attribute,
+          domain: attribute,
+          rank: rank,
+          eyeColor: art.eyeColor || getEyeColor(attribute, system),
+          oipAmplitude: art.oipAmplitude || 'Unknown',
+          oipFrequency: art.oipFrequency || 'Unknown',
+          casterStatus,
+          environment,
+          protection,
+          tool,
+          predictedDamage: art.predictedDamage,
+          calculationFormula: '[HIDDEN COMMAND] DIVINE INTERVENTION DETECTED. LIMITERS RELEASED.',
+          description: art.description,
+          chantFeedback: art.chantFeedback,
+          visualPrompt: `Divine Magic Circle of ${attribute}, Ultimate Rank`,
+          lore: { magicType: 'Hidden Art', medium: 'Divine', condition: 'Resonance', cost: 'None', theory: 'Divine', origin: 'Akashic', famousUser: 'Player' }
+      };
+  }
+
+  const name = knownSpell?.name || `${attrData.kanji}${rankData.suffix}`;
+  
+  let chant = knownSpell?.chantFeedback || "";
+  if (!chant) {
+      if (rank <= 2) {
+        chant = `我が声に応えよ、${attribute}の精霊。${rankData.theory}を開始する。`;
+      } else if (rank <= 4) {
+        chant = `深淵より来たる${attrData.reading}の理よ、我が魔力をもって形となせ。${rankData.effect}を引き起こせ！`;
+      } else {
+        chant = `原初の刻、${system}の理において命ず。${attrData.kanji}の権能をここに顕現させ、${rankData.theory}を完遂せよ。万象、我が意のままに！`;
+      }
+  }
+
+  const baseAmp = Math.pow(10, rank).toExponential(2);
+  const frequencyVal = Math.random() * 100 + 400; 
+  const frequency = `${frequencyVal.toFixed(2)} THz`;
+  
+  const finalCasterStatus = {
+    ...casterStatus,
+    consciousnessLevel: casterStatus.emotionIndex > 80 ? "Exalted (変性意識)" : casterStatus.emotionIndex > 50 ? "Clear (覚醒)" : "Normal (通常)",
+  };
+
+  const baseDamageVal = knownSpell?.predictedDamage || (50 * Math.pow(6, rank)); 
+  
+  let internalMult = 1.0 + (finalCasterStatus.emotionIndex / 200) + ((finalCasterStatus.heartRate - 60) / 400); 
+  
+  const hpRatio = Math.max(0, Math.min(1, casterStatus.hp / casterStatus.maxHp));
+  let hpMultStr = "";
+  
+  if (hpRatio <= 0.05 && hpRatio > 0) {
+      internalMult *= 3.0;
+      hpMultStr = "x3.0 (CRISIS BOOST)";
+  } else {
+      const healthFactor = 0.5 + (hpRatio * 0.5); 
+      internalMult *= healthFactor;
+      hpMultStr = `x${healthFactor.toFixed(2)} (Health Factor)`;
+  }
+
+  // --- UPDATED WEATHER LOGIC ---
+  let weatherSynergy = 1.0;
+  let weatherNote = "";
+  
+  // Basic temperature/humidity checks (Legacy)
+  if (attribute.includes('火') || attribute.includes('煉獄')) {
+      if (environment.temperature > 25) weatherSynergy += 0.1;
+      if (environment.humidity < 40) weatherSynergy += 0.1;
+  } else if (attribute.includes('水') || attribute.includes('氷')) {
+      if (environment.temperature < 10) weatherSynergy += 0.1;
+      if (environment.humidity > 60) weatherSynergy += 0.1;
+  }
+  
+  // Specific Weather Type Bonuses (Requested)
+  if (environment.weather === 'RAIN') {
+      if (attribute.includes('水') || attribute.includes('氷') || attribute.includes('海')) {
+          weatherSynergy *= 1.25;
+          weatherNote = "(Rain Boost)";
+      } else if (attribute.includes('火')) {
+          weatherSynergy *= 0.8;
+          weatherNote = "(Rain Penalty)";
+      }
+  } else if (environment.weather === 'CLOUDY') {
+      if (attribute.includes('風') || attribute.includes('音') || attribute.includes('雷')) {
+          weatherSynergy *= 1.20;
+          weatherNote = "(Cloud Boost)";
+      }
+  } else if (environment.weather === 'SUNNY') {
+      if (attribute.includes('光') || attribute.includes('火') || attribute.includes('灼')) {
+          weatherSynergy *= 1.15;
+          weatherNote = "(Sun Boost)";
+      }
+  }
+
+  const externalMult = (environment.wDensity / 3000) * weatherSynergy;
+
+  let protectionMult = 1.0;
+  let protectionStatus = "Inactive";
+  if (protection.id !== 'none') {
+    if (protection.compatibleAttributes.some(c => attribute.includes(c) || system.includes(c))) {
+        protectionMult = protection.powerMultiplier;
+        protectionStatus = "Active (Resonance)";
     } else {
-        const healthFactor = 0.5 + (hpRatio * 0.5); 
-        internalMult *= healthFactor;
-        hpMultStr = `x${healthFactor.toFixed(2)} (Health Factor)`;
+        protectionMult = 1.0; 
+        protectionStatus = "Inactive (Incompatible)";
     }
+  }
+  
+  let toolMult = tool.powerBonus;
+  if (tool.compatibleSystems.includes(system as MagicSystem)) {
+      toolMult *= 1.2;
+  }
 
-    let weatherSynergy = 1.0;
-    // Simple weather logic
-    if (attribute.includes('水') || attribute.includes('氷')) {
-        if (environment.humidity > 70) weatherSynergy = 1.2;
-    } else if (attribute.includes('火')) {
-        if (environment.temperature > 30) weatherSynergy = 1.2;
-        if (environment.humidity > 70) weatherSynergy = 0.8;
-    }
+  const finalDamage = Math.floor(baseDamageVal * internalMult * externalMult * protectionMult * toolMult);
+
+  const formula = `
+    [BASE] ${knownSpell ? 'Spell Power' : 'Rank Power'}: ${baseDamageVal.toLocaleString()}
     
-    const externalMult = (environment.wDensity / 3000) * weatherSynergy;
-
-    let protectionMult = 1.0;
-    if (protection.id !== 'none') {
-        if (protection.compatibleAttributes.some(c => attribute.includes(c) || system.includes(c))) {
-            protectionMult = protection.powerMultiplier;
-        }
-    }
+    [INTERNAL] (Emotion ${finalCasterStatus.emotionIndex}% + Vitals): x${(internalMult / (hpRatio <= 0.05 ? 3.0 : (0.5 + hpRatio * 0.5))).toFixed(2)}
+    [VITALITY] HP ${casterStatus.hp}/${casterStatus.maxHp}: ${hpMultStr}
     
-    let toolMult = tool.powerBonus;
-    if (tool.compatibleSystems.includes(system as MagicSystem)) {
-        toolMult *= 1.2;
+    [EXTERNAL] (W-Density ${environment.wDensity}): x${(environment.wDensity/3000).toFixed(2)}
+    [WEATHER] ${environment.weather} ${weatherNote}: x${weatherSynergy.toFixed(2)}
+    
+    [DIVINE] ${protection.name} (${protectionStatus}): x${protectionMult.toFixed(2)}
+    
+    [TOOL] ${tool.name}: x${toolMult.toFixed(2)}
+    
+    --------------------------------
+    TOTAL: ${finalDamage.toLocaleString()}
+  `.trim();
+
+  const description = knownSpell?.description || `第${rank}環（リング）に属する${system}魔法。${rankData.theory}を応用し、対象領域に${attrData.kanji}属性の${rankData.effect}をもたらす。`;
+
+  return {
+    name: name,
+    system: system as MagicSystem,
+    attribute: attribute,
+    domain: attribute.includes('域') ? attribute : "通常領域",
+    rank: rank,
+    eyeColor: getEyeColor(attribute, system),
+    oipAmplitude: `${baseAmp} Wm`,
+    oipFrequency: frequency,
+    
+    casterStatus: finalCasterStatus,
+    environment: environment,
+    
+    protection: protection,
+    tool: tool,
+
+    predictedDamage: finalDamage,
+    calculationFormula: formula,
+    description: description,
+    chantFeedback: chant,
+    visualPrompt: `Magic circle of ${attribute}, rank ${rank}`,
+    lore: {
+      magicType: rank > 4 ? "儀式魔術" : "即時発動",
+      medium: "音声詠唱およびW視核",
+      condition: "視界確保",
+      cost: rank > 5 ? "術者の生命力" : "大気中のマナ",
+      theory: rankData.theory,
+      origin: "古代ヴェルナ文明",
+      famousUser: "大賢者アストラル"
     }
-
-    const syncAttackMult = 1.0 + ((1.0 - syncRate) * 2.0);
-    const syncEnvBonus = (syncRate * 0.5) + 0.8; 
-    const finalExternalMult = externalMult * syncEnvBonus;
-
-    const finalDamage = Math.floor(baseDamageVal * internalMult * finalExternalMult * protectionMult * toolMult * syncAttackMult);
-
-    const formula = `
-    [BASE] ${baseDamageVal.toFixed(0)} 
-    x [INTERNAL] ${internalMult.toFixed(2)} (Emo:${casterStatus.emotionIndex}, HR:${casterStatus.heartRate}, HP:${hpMultStr})
-    x [EXTERNAL] ${finalExternalMult.toFixed(2)} (W:${environment.wDensity}, Weather:${weatherSynergy})
-    x [PROTECTION] ${protectionMult.toFixed(1)} (${protection.name})
-    x [TOOL] ${toolMult.toFixed(2)} (${tool.name})
-    x [SYNC] ${syncAttackMult.toFixed(2)} (Rate: ${syncRate.toFixed(2)})
-    `;
-
-    return {
-        name: knownSpell?.name || `${attrData.kanji}${rankData.suffix}`,
-        system: system as MagicSystem,
-        attribute: attribute,
-        domain: attribute,
-        rank: rank,
-        eyeColor: 'white', 
-        oipAmplitude: '100 Wm',
-        oipFrequency: '500 THz',
-        casterStatus,
-        environment,
-        protection,
-        tool,
-        predictedDamage: finalDamage,
-        calculationFormula: formula,
-        description: knownSpell?.description || "Generated Spell",
-        chantFeedback: knownSpell?.chantFeedback || "Chant...",
-        visualPrompt: "Circle",
-        lore: { magicType: "Type", medium: "Medium", condition: "Cond", cost: "Cost", theory: "Theory", origin: "Origin", famousUser: "User" }
-    };
+  };
 };

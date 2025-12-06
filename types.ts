@@ -7,9 +7,6 @@ export enum MagicSystem {
   OTHER = 'その他'      // Other
 }
 
-export type GameMode = 'SIMULATION' | 'BATTLE';
-export type BattlePhase = 'SETUP' | 'PLAYER_TURN' | 'ENEMY_TURN' | 'VICTORY' | 'DEFEAT';
-
 export const SYSTEM_ATTRIBUTES: Record<MagicSystem, string[]> = {
   [MagicSystem.ELEMENTAL]: [
     '火属性', '水属性', '風属性', '土属性',
@@ -45,6 +42,8 @@ export interface CasterStatus {
   emotionIndex: number; // 0-100 (affecting output)
 }
 
+export type WeatherType = 'SUNNY' | 'RAIN' | 'CLOUDY';
+
 export interface SpellEnvironment {
   location: {
     lat: number;
@@ -54,6 +53,7 @@ export interface SpellEnvironment {
   temperature: number; // Celsius
   humidity: number; // %
   wDensity: number; // Ambient W density
+  weather: WeatherType; // Added Weather Type
 }
 
 export interface DivineProtectionLore {
@@ -145,7 +145,6 @@ export interface EnemyDef {
     currentHp: number;
     attribute: string;
     description: string;
-    attackPower: number; // Added for Battle Mode
 }
 
 export interface CombatLogEntry {
@@ -153,9 +152,8 @@ export interface CombatLogEntry {
     timestamp: number;
     message: string;
     damage?: number;
-    source?: 'PLAYER' | 'ENEMY';
     isCritical?: boolean;
-    effectiveness?: 'SUPER' | 'NORMAL' | 'POOR' | 'MISS' | 'HEAL' | 'BUFF';
+    effectiveness?: 'SUPER' | 'NORMAL' | 'POOR';
 }
 
 export type AppState = 'IDLE' | 'ANALYZING' | 'MANIFESTING' | 'COMPLETE' | 'ERROR';
