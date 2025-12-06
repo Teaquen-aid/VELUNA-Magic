@@ -156,7 +156,7 @@ export interface CombatLogEntry {
     effectiveness?: 'SUPER' | 'NORMAL' | 'POOR';
 }
 
-export type AppState = 'IDLE' | 'ANALYZING' | 'MANIFESTING' | 'COMPLETE' | 'ERROR';
+export type AppState = 'IDLE' | 'ANALYZING' | 'MANIFESTING' | 'READY' | 'COMPLETE' | 'ERROR';
 
 export const INVOCATION_STEPS = [
   "意志集中 (Intent Focus)",

@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { constructSpell, extendAttributeKeywords, ATTRIBUTE_KEYWORDS, DIVINE_PROTECTIONS, getTools, registerTool, PREDEFINED_GRIMOIRE, DEFAULT_TOOLS, ENEMIES, CHARACTER_PRESETS } from './services/geminiService';
-import { AppState, ManifestedSpell, SpellAnalysis, INVOCATION_STEPS, MagicSystem, SYSTEM_ATTRIBUTES, RING_DATA, CasterStatus, SpellEnvironment, ToolDef, EnemyDef, CombatLogEntry, WeatherType, CharacterPreset } from './types';
+import { constructSpell, extendAttributeKeywords, ATTRIBUTE_KEYWORDS, DIVINE_PROTECTIONS, getTools, PREDEFINED_GRIMOIRE, DEFAULT_TOOLS, ENEMIES, CHARACTER_PRESETS } from './services/geminiService';
+import { AppState, ManifestedSpell, SpellAnalysis, INVOCATION_STEPS, MagicSystem, SYSTEM_ATTRIBUTES, RING_DATA, CasterStatus, SpellEnvironment, ToolDef, EnemyDef, CombatLogEntry, WeatherType, CharacterPreset, DivineProtectionDef } from './types';
 import MagicCircle from './components/MagicCircle';
 import SpellResult from './components/SpellResult';
 import Grimoire from './components/Grimoire';
-import SpellEditor from './components/SpellEditor';
 import CombatPanel from './components/CombatPanel';
-import { Box, CircleDot, Layers, Component, Sparkles, Activity, Settings, X, Shield, Trash2, Volume2, Edit2, ChevronUp, Waves, Zap, Upload, List, Plus, Search, Crown, Heart, Thermometer, CloudFog, MapPin, Gauge, Hammer, Pause, Play, Book, Skull, ArrowUp, AlertTriangle, Swords, User, Sun, CloudRain, Cloud } from 'lucide-react';
+import { Box, CircleDot, Layers, Component, Sparkles, Activity, Settings, X, Shield, Trash2, Volume2, Edit2, ChevronUp, Waves, Zap, Crown, Heart, Thermometer, CloudFog, MapPin, Gauge, Hammer, Pause, Play, Book, Skull, ArrowUp, AlertTriangle, Swords, Sun, CloudRain, Cloud, Dices, Plus } from 'lucide-react';
 
 const FAILURE_REASONS = [
   "術式回路の臨界崩壊 (Circuit Criticality Collapse)",
@@ -184,13 +183,13 @@ const CircularSlider: React.FC<{ value: number; onChange: (val: number) => void;
 
 // Sensor Component
 const SensorData: React.FC<{ icon: React.ReactNode; label: string; value: string; unit?: string; color?: string; blink?: boolean }> = ({ icon, label, value, unit, color = "text-white", blink = false }) => (
-  <div className={`bg-white/5 border border-white/5 rounded p-2 flex flex-col justify-between h-full hover:bg-white/10 transition-colors ${blink ? 'animate-pulse bg-red-900/20 border-red-500/30' : ''}`}>
-     <div className="flex items-center gap-1.5 text-gray-500 mb-1">
-        <div style={{ color: color }} className="opacity-80">{icon}</div>
-        <span className="text-[9px] font-mono uppercase tracking-wider">{label}</span>
+  <div className={`bg-white/5 border border-white/5 rounded p-2 flex flex-col justify-between h-full hover:bg-white/10 transition-colors ${blink ? 'animate-pulse bg-red-900/20 border-red-500/30' : ''} min-w-0 overflow-hidden`}>
+     <div className="flex items-center gap-1.5 text-gray-500 mb-1 min-w-0">
+        <div style={{ color: color }} className="opacity-80 shrink-0">{icon}</div>
+        <span className="text-[9px] font-mono uppercase tracking-wider truncate">{label}</span>
      </div>
-     <div className="text-sm font-mono font-medium truncate flex items-baseline gap-1" style={{ color: color === "text-white" ? undefined : color }}>
-        {value} {unit && <span className="text-[10px] text-gray-500">{unit}</span>}
+     <div className="text-sm font-mono font-medium truncate flex items-baseline gap-1 min-w-0" style={{ color: color === "text-white" ? undefined : color }}>
+        <span className="truncate">{value}</span> {unit && <span className="text-[10px] text-gray-500 shrink-0">{unit}</span>}
      </div>
   </div>
 );
@@ -205,16 +204,17 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
+  // Chance Mode State
+  const [chanceMode, setChanceMode] = useState(false);
+  const [diceValue, setDiceValue] = useState<number | null>(null);
+  const [isRolling, setIsRolling] = useState(false);
+
   // Character State
   const [characters, setCharacters] = useState<CharacterPreset[]>(CHARACTER_PRESETS);
   const [newCharName, setNewCharName] = useState('');
   const [showCharAdd, setShowCharAdd] = useState(false);
 
   // Modals
-  const [showRegistryEditor, setShowRegistryEditor] = useState(false);
-  const [showSpellEditor, setShowSpellEditor] = useState(false);
-  const [editingSpell, setEditingSpell] = useState<ManifestedSpell | null>(null);
-  
   const [configOpen, setConfigOpen] = useState(false);
   const [isGrimoireOpen, setIsGrimoireOpen] = useState(false);
   
@@ -229,27 +229,15 @@ export default function App() {
 
   // Attributes & Tools
   const [sysAttributes, setSysAttributes] = useState<Record<MagicSystem, string[]>>(SYSTEM_ATTRIBUTES);
-  const [keywords, setKeywords] = useState(ATTRIBUTE_KEYWORDS);
-  const [allTools, setAllTools] = useState<ToolDef[]>([]);
   
-  // Editor State
-  const [editorTab, setEditorTab] = useState<'REGISTRY' | 'TOOLS' | 'IMPORT'>('REGISTRY');
-  const [newAttrSystem, setNewAttrSystem] = useState<MagicSystem>(MagicSystem.ELEMENTAL);
-  const [newAttrName, setNewAttrName] = useState('');
-  const [newAttrKanji, setNewAttrKanji] = useState('');
-  const [newAttrReading, setNewAttrReading] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Tool Editor State
-  const [newToolName, setNewToolName] = useState('');
-  const [newToolCategory, setNewToolCategory] = useState('');
-  const [newToolDesc, setNewToolDesc] = useState('');
-  const [newToolSystem, setNewToolSystem] = useState<MagicSystem>(MagicSystem.ELEMENTAL);
-  const [newToolBonus, setNewToolBonus] = useState<string>('1.1');
+  // Tool & Protection State (Read-only for selection)
+  const [allTools, setAllTools] = useState<ToolDef[]>([]);
+  const [allProtections, setAllProtections] = useState<DivineProtectionDef[]>(DIVINE_PROTECTIONS);
 
   // Load initial tools and PREDEFINED SPELLS
   useEffect(() => {
     setAllTools(getTools());
+    setAllProtections(DIVINE_PROTECTIONS);
     const spells = PREDEFINED_GRIMOIRE.map(p => ({
         ...p,
         timestamp: Date.now(),
@@ -477,6 +465,7 @@ export default function App() {
       const interval = setInterval(() => { setInvocationStep(prev => (prev < 6 ? prev + 1 : prev)); }, 800); 
       return () => clearInterval(interval);
     }
+    // No explicit step increment for READY state
   }, [appState]);
 
   const calculateStability = () => {
@@ -487,6 +476,58 @@ export default function App() {
     return Math.floor(Math.min(100, Math.max(0, activityRate + baseStability + hpBonus - rankPenalty)));
   };
   const stabilityScore = calculateStability();
+
+  // Unified Manifestation Logic
+  const executeManifestation = async (multiplier: number = 1.0) => {
+    try {
+      setAppState('ANALYZING'); setErrorMsg(null);
+      
+      let knownSpell = activeSpellId ? grimoire.find(s => s.id === activeSpellId) : undefined;
+      if (!knownSpell) knownSpell = grimoire.find(s => s.system === system && s.rank === rank && s.attribute === attribute);
+      
+      const spellAnalysis = await constructSpell(
+          rank, system, attribute, selectedProtection, selectedToolId, envData, vitalData, knownSpell
+      );
+
+      // Apply multiplier
+      if (multiplier !== 1.0) {
+          spellAnalysis.predictedDamage = Math.floor(spellAnalysis.predictedDamage * multiplier);
+          spellAnalysis.calculationFormula += `\n[FATE] Critical Resonance: x${multiplier}`;
+      }
+
+      setAnalysis(spellAnalysis);
+      
+      // Animation sequence
+      if (multiplier > 1.0) {
+          // Faster animation for revival
+          await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+      
+      setAppState('MANIFESTING');
+      await new Promise(resolve => setTimeout(resolve, 3200));
+
+      // PAUSE AT READY STATE instead of completing
+      setAppState('READY');
+      
+      setChanceMode(false); // Close modal if open
+      setDiceValue(null);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("W-Core Critical Failure.");
+      setAppState('ERROR');
+    }
+  };
+
+  const finalizeSpell = () => {
+      if (appState !== 'READY' || !analysis) return;
+      
+      const id = `INV${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+      const newSpell: ManifestedSpell = { ...analysis, id, timestamp: Date.now() };
+      setCurrentSpell(newSpell);
+      setAppState('COMPLETE');
+  };
 
   const castSpell = async () => {
     const hpRatio = vitalData.hp / vitalData.maxHp;
@@ -502,34 +543,51 @@ export default function App() {
     if (!isSuccess) {
          setAppState('ANALYZING'); setErrorMsg(null); setInvocationStep(0);
          await new Promise(resolve => setTimeout(resolve, 1500));
+         
+         // Chance Mode Check: HP <= 10% and 5% Chance
+         if (hpRatio <= 0.10 && Math.random() <= 0.05) {
+             setChanceMode(true);
+             return; 
+         }
+
          const randomReason = FAILURE_REASONS[Math.floor(Math.random() * FAILURE_REASONS.length)];
          setErrorMsg(`発動に失敗しました (Activation Failed)\nReason: ${randomReason}`);
          setAppState('ERROR');
          return;
     }
 
-    try {
-      setAppState('ANALYZING'); setErrorMsg(null);
-      let knownSpell = activeSpellId ? grimoire.find(s => s.id === activeSpellId) : undefined;
-      if (!knownSpell) knownSpell = grimoire.find(s => s.system === system && s.rank === rank && s.attribute === attribute);
-      
-      const spellAnalysis = await constructSpell(
-          rank, system, attribute, selectedProtection, selectedToolId, envData, vitalData, knownSpell
-      );
-      setAnalysis(spellAnalysis);
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      setAppState('MANIFESTING');
-      await new Promise(resolve => setTimeout(resolve, 3200));
-      const id = `INV${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-      const newSpell: ManifestedSpell = { ...spellAnalysis, id, timestamp: Date.now() };
-      setCurrentSpell(newSpell);
-      setAppState('COMPLETE');
-    } catch (err) {
-      console.error(err);
-      setErrorMsg("W-Core Critical Failure.");
-      setAppState('ERROR');
-    }
+    // Normal Cast
+    await executeManifestation(1.0);
   };
+
+  const handleRollFate = async () => {
+    setIsRolling(true);
+    let rollDuration = 2000;
+    
+    const animateDice = setInterval(() => {
+        setDiceValue(Math.floor(Math.random() * 6) + 1);
+    }, 100);
+
+    setTimeout(() => {
+        clearInterval(animateDice);
+        const finalValue = Math.floor(Math.random() * 6) + 1;
+        setDiceValue(finalValue);
+        setIsRolling(false);
+
+        if (finalValue === 1) {
+             // Success with Boost
+             setTimeout(() => executeManifestation(2.0), 1000); 
+        } else {
+             // Fail
+             setTimeout(() => {
+                setChanceMode(false);
+                setDiceValue(null);
+                setErrorMsg("運命は微笑まなかった... (Fate Denied)");
+                setAppState('ERROR');
+             }, 1500);
+        }
+    }, rollDuration);
+  }
 
   const reset = () => { setAppState('IDLE'); setCurrentSpell(null); setAnalysis(null); setInvocationStep(0); };
   const handleGrimoireSelect = (spell: ManifestedSpell) => {
@@ -539,38 +597,7 @@ export default function App() {
   };
   const clearHistory = () => { setGrimoire([]); setShowSettings(false); };
   
-  const handleOpenSpellEditor = (spell?: ManifestedSpell) => { setEditingSpell(spell || null); setShowSpellEditor(true); };
-  const handleSaveSpell = (spell: ManifestedSpell) => {
-    if (editingSpell) setGrimoire(prev => prev.map(s => s.id === spell.id ? spell : s));
-    else setGrimoire(prev => [spell, ...prev]);
-    setShowSpellEditor(false);
-  };
   const handleDeleteSpell = (spellId: string) => { setGrimoire(prev => prev.filter(s => s.id !== spellId)); };
-
-  const handleManualAdd = () => {
-    if (!newAttrName || !newAttrKanji || !newAttrReading) return;
-    const newKeywordData = { [newAttrName]: { kanji: newAttrKanji, reading: newAttrReading, tone: 'neutral' } };
-    extendAttributeKeywords(newKeywordData);
-    setKeywords(prev => ({ ...prev, ...newKeywordData }));
-    setSysAttributes(prev => {
-        const currentList = prev[newAttrSystem] || [];
-        if (currentList.includes(newAttrName)) return prev;
-        return { ...prev, [newAttrSystem]: [...currentList, newAttrName] };
-    });
-    setNewAttrName(''); setNewAttrKanji(''); setNewAttrReading('');
-  };
-  
-  const handleManualAddTool = () => {
-      if (!newToolName || !newToolCategory || !newToolDesc) return;
-      const newTool: ToolDef = {
-          id: `tool_custom_${Date.now()}`, name: newToolName, category: newToolCategory, description: newToolDesc, compatibleSystems: [newToolSystem], powerBonus: parseFloat(newToolBonus) || 1.1
-      };
-      registerTool(newTool);
-      setAllTools(getTools());
-      setNewToolName(''); setNewToolCategory(''); setNewToolDesc('');
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => { /* ... existing import logic ... */ };
 
   const renderAttrButton = (attr: string) => (
     <button
@@ -600,9 +627,53 @@ export default function App() {
 
   const isIdle = appState === 'IDLE';
 
+  // Container Animation Logic for Magic Circle
+  // IDLE: Opacity 0 (Hidden)
+  // ANALYZING/MANIFESTING/READY: Scale 125/110, Opacity 100
+  // COMPLETE: Scale [5], Opacity 0 (ZOOM EFFECT!)
+  const circleContainerClass = `transition-all duration-700 ease-in-out flex justify-center items-center absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none 
+    ${appState === 'IDLE' ? 'opacity-0 scale-50' : 
+      appState === 'COMPLETE' ? 'opacity-0 scale-[5] pointer-events-none duration-500' : 
+      'scale-125 opacity-100 pointer-events-auto'}`;
+
   return (
     <div className="min-h-screen bg-[#050505] text-gray-200 font-sans selection:bg-magic-accent selection:text-white flex overflow-hidden">
       
+      {/* Chance Mode Overlay */}
+      {chanceMode && (
+        <div className="fixed inset-0 z-[150] bg-black/90 flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="text-red-500 font-serif text-2xl md:text-4xl mb-2 tracking-widest animate-pulse">CRITICAL RESONANCE</div>
+            <div className="text-gray-400 font-mono text-xs md:text-sm mb-8">Fatal Error Detected. Attempting Forced Override...</div>
+            
+            <div className="w-32 h-32 md:w-48 md:h-48 bg-white/5 border-2 border-red-500/50 rounded-lg flex items-center justify-center mb-8 relative overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.2)]">
+                {diceValue !== null ? (
+                    <div className={`text-6xl md:text-8xl font-bold ${diceValue === 1 ? 'text-magic-accent drop-shadow-[0_0_20px_rgba(139,92,246,0.8)]' : 'text-gray-500'}`}>
+                        {diceValue}
+                    </div>
+                ) : (
+                    <Dices className="w-16 h-16 md:w-24 md:h-24 text-red-500 animate-bounce" />
+                )}
+            </div>
+            
+            {!isRolling && diceValue === null && (
+                <button 
+                    onClick={handleRollFate}
+                    className="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-mono font-bold tracking-widest rounded border border-red-400 shadow-lg shadow-red-900/50 transition-all hover:scale-105"
+                >
+                    ROLL FATE (Target: 1)
+                </button>
+            )}
+            
+            {diceValue === 1 && (
+                <div className="text-magic-accent font-serif text-xl tracking-widest animate-in zoom-in duration-300">OVERRIDE SUCCESSFUL</div>
+            )}
+            
+            {diceValue !== null && diceValue !== 1 && (
+                 <div className="text-gray-500 font-mono text-sm">OVERRIDE FAILED</div>
+            )}
+        </div>
+      )}
+
       {/* Add Character Modal */}
       {showCharAdd && (
           <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -642,7 +713,7 @@ export default function App() {
 
         <div className="relative z-10 w-full max-w-7xl px-8 flex flex-col items-center">
           
-          {appState === 'ERROR' && (
+          {appState === 'ERROR' && !chanceMode && (
              <div className="mb-8 p-6 bg-red-950/80 border border-red-500/50 rounded-lg text-red-100 font-mono text-sm max-w-md text-center z-50 shadow-[0_0_30px_rgba(220,38,38,0.3)] backdrop-blur-md animate-in slide-in-from-top-4 fade-in">
                 <div className="flex justify-center mb-2"><AlertTriangle className="w-8 h-8 text-red-500 animate-pulse" /></div>
                 <div className="whitespace-pre-wrap leading-relaxed">{errorMsg}</div>
@@ -650,18 +721,26 @@ export default function App() {
              </div>
           )}
 
-          <div className={`transition-all duration-1000 ease-in-out flex justify-center items-center ${appState === 'IDLE' ? 'opacity-0 scale-50 pointer-events-none absolute' : appState === 'COMPLETE' ? 'opacity-0 scale-50 pointer-events-none absolute' : 'scale-125 my-12 opacity-100'}`}>
-            <MagicCircle state={appState === 'COMPLETE' ? 'IDLE' : appState} system={appState === 'IDLE' ? system : analysis?.system} attribute={appState === 'IDLE' ? attribute : analysis?.attribute} eyeColor={appState === 'IDLE' ? undefined : analysis?.eyeColor} stepText={appState === 'IDLE' ? undefined : INVOCATION_STEPS[invocationStep]} stepIndex={invocationStep} />
+          {/* MAGIC CIRCLE CONTAINER - Handles Zoom Effect */}
+          <div className={circleContainerClass}>
+            <MagicCircle 
+                state={appState === 'COMPLETE' ? 'IDLE' : appState} 
+                system={appState === 'IDLE' ? system : analysis?.system} 
+                attribute={appState === 'IDLE' ? attribute : analysis?.attribute} 
+                eyeColor={appState === 'IDLE' ? undefined : analysis?.eyeColor} 
+                stepText={appState === 'IDLE' ? undefined : INVOCATION_STEPS[invocationStep]} 
+                stepIndex={invocationStep} 
+                onRelease={finalizeSpell}
+            />
           </div>
-          
+
           <div className={`w-full relative z-10 transition-all duration-700 delay-100 ${!isIdle ? 'opacity-0 translate-y-20 pointer-events-none h-0 overflow-hidden' : 'opacity-100 h-auto'}`}>
-            
+             {/* ... Main Interface ... */}
             <div className="bg-black/60 border border-white/10 rounded-lg p-8 backdrop-blur-md shadow-2xl relative transition-all duration-500">
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-magic-accent to-transparent opacity-50"></div>
               
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                
-                {/* Left Column: Stats & Controls */}
+                {/* Left Column */}
                 <div className="lg:col-span-3 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-white/10 pb-8 lg:pb-0 lg:pr-8 gap-4">
                    <div className="flex gap-4 items-center justify-between mb-2 h-44">
                         <VerticalHpSlider hp={vitalData.hp} maxHp={vitalData.maxHp} onChange={(val) => setVitalData(prev => ({...prev, hp: val}))} />
@@ -671,6 +750,7 @@ export default function App() {
                        </div>
                    </div>
 
+                   {/* Sensor Data - Updates with min-w-0 */}
                    <div className="space-y-2">
                       <div className="flex items-center justify-between border-b border-white/5 pb-1">
                           <div className="text-[10px] font-mono text-gray-600 uppercase tracking-widest flex items-center gap-2"><Heart className="w-3 h-3" /> Live Biometrics</div>
@@ -686,11 +766,11 @@ export default function App() {
 
                    <div className="space-y-2">
                       <div className="flex items-center justify-between border-b border-white/5 pb-1">
-                          <div className="text-[10px] font-mono text-gray-600 uppercase tracking-widest flex items-center gap-2">
-                             {envData.weather === 'SUNNY' ? <Sun className="w-3 h-3 text-yellow-500" /> : envData.weather === 'RAIN' ? <CloudRain className="w-3 h-3 text-blue-500" /> : <Cloud className="w-3 h-3 text-gray-400" />}
-                             Weather: {envData.weather}
+                          <div className="text-[10px] font-mono text-gray-600 uppercase tracking-widest flex items-center gap-2 min-w-0">
+                             {envData.weather === 'SUNNY' ? <Sun className="w-3 h-3 text-yellow-500 shrink-0" /> : envData.weather === 'RAIN' ? <CloudRain className="w-3 h-3 text-blue-500 shrink-0" /> : <Cloud className="w-3 h-3 text-gray-400 shrink-0" />}
+                             <span className="truncate">Weather: {envData.weather}</span>
                           </div>
-                          <button onClick={updateEnvironment} className="text-[9px] hover:text-white transition-colors text-magic-accent uppercase font-mono border border-magic-accent/30 px-1 rounded bg-magic-accent/10">UPDATE ENV</button>
+                          <button onClick={updateEnvironment} className="text-[9px] hover:text-white transition-colors text-magic-accent uppercase font-mono border border-magic-accent/30 px-1 rounded bg-magic-accent/10 shrink-0">UPDATE ENV</button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                           <SensorData icon={<Waves size={14} />} label="W-Density" value={envData.wDensity.toString()} unit="u/m³" color="#3b82f6" />
@@ -698,14 +778,13 @@ export default function App() {
                            <SensorData icon={<Thermometer size={14} />} label="Amb.Temp" value={envData.temperature.toString()} unit="°C" />
                           <SensorData icon={<CloudFog size={14} />} label="Humidity" value={envData.humidity.toString()} unit="%" />
                       </div>
-                       <div className="bg-white/5 border border-white/5 rounded p-1.5 flex items-center gap-2"><MapPin className="w-3 h-3 text-gray-500" /><div className="text-[9px] font-mono text-gray-400 truncate">{envData.location.lat.toFixed(4)}, {envData.location.lng.toFixed(4)} <span className="text-gray-600">|</span> Alt: {envData.location.alt}m</div></div>
+                       <div className="bg-white/5 border border-white/5 rounded p-1.5 flex items-center gap-2"><MapPin className="w-3 h-3 text-gray-500 shrink-0" /><div className="text-[9px] font-mono text-gray-400 truncate">{envData.location.lat.toFixed(4)}, {envData.location.lng.toFixed(4)} <span className="text-gray-600">|</span> Alt: {envData.location.alt}m</div></div>
                    </div>
                 </div>
 
-                {/* Right Column: Configuration */}
+                {/* Right Column */}
                 <div className="lg:col-span-9 flex flex-col justify-center">
-                  
-                  {/* Character Selection (Moved Here) */}
+                  {/* Character Selection */}
                   <div className="mb-6 bg-black/20 p-4 rounded border border-white/5">
                       <div className="flex justify-between items-center mb-2">
                           <div className="text-xs font-mono text-gray-500 uppercase">Resonance Persona</div>
@@ -735,21 +814,21 @@ export default function App() {
                   </div>
 
                   {!configOpen ? (
-                    <div className="h-full flex flex-col items-center justify-center space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                     <div className="h-full flex flex-col items-center justify-center space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                       
                       <div onClick={() => setConfigOpen(true)} className="grid grid-cols-3 gap-4 w-full text-center cursor-pointer group relative">
                          <div className="absolute -top-6 right-0 text-[10px] text-magic-accent opacity-0 group-hover:opacity-100 transition-opacity font-mono uppercase tracking-widest flex items-center gap-1">Modify <Edit2 className="w-3 h-3" /></div>
-                         <div className="p-3 border border-white/10 rounded bg-white/5 group-hover:bg-white/10 group-hover:border-magic-accent/50 transition-all">
-                            <div className="text-[9px] text-gray-500 font-mono uppercase mb-1">System</div>
-                            <div className="text-sm font-sans text-white">{system}</div>
+                         <div className="p-3 border border-white/10 rounded bg-white/5 group-hover:bg-white/10 group-hover:border-magic-accent/50 transition-all min-w-0">
+                            <div className="text-[9px] text-gray-500 font-mono uppercase mb-1 truncate">System</div>
+                            <div className="text-sm font-sans text-white truncate">{system}</div>
                          </div>
-                         <div className="p-3 border border-white/10 rounded bg-white/5 group-hover:bg-white/10 group-hover:border-magic-accent/50 transition-all">
-                            <div className="text-[9px] text-gray-500 font-mono uppercase mb-1">Rank</div>
-                            <div className="text-sm font-sans text-white">Rank {rank}</div>
+                         <div className="p-3 border border-white/10 rounded bg-white/5 group-hover:bg-white/10 group-hover:border-magic-accent/50 transition-all min-w-0">
+                            <div className="text-[9px] text-gray-500 font-mono uppercase mb-1 truncate">Rank</div>
+                            <div className="text-sm font-sans text-white truncate">Rank {rank}</div>
                          </div>
-                         <div className="p-3 border border-white/10 rounded bg-white/5 group-hover:bg-white/10 group-hover:border-magic-accent/50 transition-all">
-                            <div className="text-[9px] text-gray-500 font-mono uppercase mb-1">Attribute</div>
-                            <div className="text-sm font-sans text-white">{attribute}</div>
+                         <div className="p-3 border border-white/10 rounded bg-white/5 group-hover:bg-white/10 group-hover:border-magic-accent/50 transition-all min-w-0">
+                            <div className="text-[9px] text-gray-500 font-mono uppercase mb-1 truncate">Attribute</div>
+                            <div className="text-sm font-sans text-white truncate">{attribute}</div>
                          </div>
                       </div>
 
@@ -766,6 +845,7 @@ export default function App() {
                       </div>
                     </div>
                   ) : (
+                    // Config Panel
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative flex flex-col h-[400px]">
                       <button onClick={() => setConfigOpen(false)} className="absolute -top-4 -right-2 p-2 text-gray-500 hover:text-white transition-colors"><ChevronUp className="w-5 h-5" /></button>
 
@@ -806,13 +886,13 @@ export default function App() {
 
                           {configTab === 'PROTECTION' && (
                               <div className="space-y-2">
-                                  {DIVINE_PROTECTIONS.map((prot) => (
+                                  {allProtections.map((prot) => (
                                       <button key={prot.id} onClick={() => setSelectedProtection(prot.id)} className={`w-full text-left p-2 border rounded flex justify-between items-center group transition-colors ${selectedProtection === prot.id ? 'bg-magic-accent/20 border-magic-accent' : 'border-white/10 hover:bg-white/5'}`}>
-                                          <div>
-                                              <div className={`text-xs font-bold ${selectedProtection === prot.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{prot.name}</div>
-                                              <div className="text-[9px] text-gray-500">{prot.category}</div>
+                                          <div className="min-w-0 pr-2">
+                                              <div className={`text-xs font-bold truncate ${selectedProtection === prot.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{prot.name}</div>
+                                              <div className="text-[9px] text-gray-500 truncate">{prot.category}</div>
                                           </div>
-                                          {selectedProtection === prot.id && <Crown className="w-4 h-4 text-magic-accent" />}
+                                          {selectedProtection === prot.id && <Crown className="w-4 h-4 text-magic-accent shrink-0" />}
                                       </button>
                                   ))}
                               </div>
@@ -822,11 +902,11 @@ export default function App() {
                               <div className="space-y-2">
                                   {allTools.map((tool) => (
                                       <button key={tool.id} onClick={() => setSelectedToolId(tool.id)} className={`w-full text-left p-2 border rounded flex justify-between items-center group transition-colors ${selectedToolId === tool.id ? 'bg-blue-500/20 border-blue-500' : 'border-white/10 hover:bg-white/5'}`}>
-                                          <div>
-                                              <div className={`text-xs font-bold ${selectedToolId === tool.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{tool.name}</div>
-                                              <div className="text-[9px] text-gray-500">{tool.category}</div>
+                                          <div className="min-w-0 pr-2">
+                                              <div className={`text-xs font-bold truncate ${selectedToolId === tool.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{tool.name}</div>
+                                              <div className="text-[9px] text-gray-500 truncate">{tool.category}</div>
                                           </div>
-                                          {selectedToolId === tool.id && <Hammer className="w-4 h-4 text-blue-500" />}
+                                          {selectedToolId === tool.id && <Hammer className="w-4 h-4 text-blue-500 shrink-0" />}
                                       </button>
                                   ))}
                               </div>
@@ -837,8 +917,8 @@ export default function App() {
                                   {characters.map(char => (
                                       <div key={char.id} className="bg-white/5 border border-white/10 rounded p-3">
                                           <div className="flex justify-between items-center mb-2">
-                                              <div className="text-xs font-bold text-white">{char.name}</div>
-                                              {selectedCharacterId === char.id && <span className="text-[9px] bg-magic-accent/20 text-magic-accent px-1 rounded">ACTIVE</span>}
+                                              <div className="text-xs font-bold text-white truncate">{char.name}</div>
+                                              {selectedCharacterId === char.id && <span className="text-[9px] bg-magic-accent/20 text-magic-accent px-1 rounded shrink-0">ACTIVE</span>}
                                           </div>
                                           <div className="grid grid-cols-2 gap-2 mb-2">
                                               <div>
@@ -857,7 +937,7 @@ export default function App() {
                                                     onChange={(e) => handleUpdateCharacter(char.id, 'protectionId', e.target.value)}
                                                     className="w-full bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
                                                   >
-                                                      {DIVINE_PROTECTIONS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                      {allProtections.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                                   </select>
                                               </div>
                                           </div>
@@ -885,24 +965,22 @@ export default function App() {
           </div>
 
           {appState === 'COMPLETE' && currentSpell && (
-            <div className="relative z-20 w-full"><SpellResult spell={currentSpell} onReset={reset} /></div>
+            <div className="relative z-20 w-full animate-in fade-in zoom-in-50 duration-700"><SpellResult spell={currentSpell} onReset={reset} /></div>
           )}
 
         </div>
 
       </main>
 
-      {/* Right Sidebar Grimoire */}
-      <Grimoire history={grimoire} onSelect={handleGrimoireSelect} isOpen={isGrimoireOpen} onToggle={() => setIsGrimoireOpen(!isGrimoireOpen)} onAdd={() => handleOpenSpellEditor()} onEdit={(spell) => handleOpenSpellEditor(spell)} onDelete={(id) => handleDeleteSpell(id)} />
+      {/* Right Sidebar Grimoire & Other Modals kept same */}
+      <Grimoire history={grimoire} onSelect={handleGrimoireSelect} isOpen={isGrimoireOpen} onToggle={() => setIsGrimoireOpen(!isGrimoireOpen)} onDelete={(id) => handleDeleteSpell(id)} />
       
-      {showSpellEditor && <SpellEditor isOpen={showSpellEditor} onClose={() => setShowSpellEditor(false)} onSave={handleSaveSpell} initialData={editingSpell} />}
       <CombatPanel isOpen={combatOpen} onClose={() => setCombatOpen(false)} enemy={activeEnemy} logs={combatLogs} onReset={handleResetCombat} onSelectEnemy={handleSelectEnemy} enemiesList={ENEMIES} />
 
       {/* Button Stack */}
       <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-4">
         <button onClick={() => setIsGrimoireOpen(!isGrimoireOpen)} className={`p-3 border rounded-full backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] ${isGrimoireOpen ? 'bg-magic-gold text-black border-magic-gold' : 'bg-black/60 border-white/10 text-magic-gold hover:border-magic-gold'}`}><Book className="w-5 h-5" /></button>
         <button onClick={() => setCombatOpen(!combatOpen)} className={`p-3 border rounded-full backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] ${combatOpen ? 'bg-red-500 text-white border-red-500' : 'bg-black/60 border-white/10 text-red-500 hover:border-red-500'}`}><Swords className="w-5 h-5" /></button>
-        <button onClick={() => setShowRegistryEditor(true)} className="p-3 bg-black/60 border border-white/10 text-gray-400 hover:text-white hover:border-magic-accent rounded-full backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(139,92,246,0.3)]"><List className="w-5 h-5" /></button>
         <button onClick={() => setShowSettings(true)} className="p-3 bg-black/60 border border-white/10 text-gray-400 hover:text-white hover:border-magic-accent rounded-full backdrop-blur-md transition-all hover:rotate-90"><Settings className="w-5 h-5" /></button>
       </div>
 
@@ -910,61 +988,13 @@ export default function App() {
           <button onClick={scrollToTop} className="p-3 bg-magic-accent hover:bg-magic-accent/80 text-white rounded-full shadow-lg shadow-magic-accent/30 transition-transform hover:-translate-y-1"><ArrowUp className="w-5 h-5" /></button>
       </div>
 
-      {showRegistryEditor && (
-        // ... Registry Editor UI kept mostly same, ensured it renders
-        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-             <div className="bg-[#0a0a0f] border border-white/20 w-full max-w-2xl rounded-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-                 {/* ... (Registry Content) ... */}
-                 <div className="p-6 flex-1 flex flex-col overflow-hidden">
-                    <div className="flex justify-between items-center mb-6 shrink-0">
-                       <div className="flex items-center gap-2 text-magic-accent"><List className="w-5 h-5" /><h2 className="font-serif text-lg tracking-widest text-white">GRIMOIRE REGISTRY</h2></div>
-                       <button onClick={() => setShowRegistryEditor(false)} className="text-gray-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
-                    </div>
-                     {/* Tab Navigation */}
-                    <div className="flex border-b border-white/10 mb-6 shrink-0">
-                      <button onClick={() => setEditorTab('REGISTRY')} className={`px-4 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${editorTab === 'REGISTRY' ? 'text-white border-b-2 border-magic-accent bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}>Registry List</button>
-                      <button onClick={() => setEditorTab('TOOLS')} className={`px-4 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${editorTab === 'TOOLS' ? 'text-white border-b-2 border-magic-accent bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}>Tools</button>
-                      <button onClick={() => setEditorTab('IMPORT')} className={`px-4 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${editorTab === 'IMPORT' ? 'text-white border-b-2 border-magic-accent bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}>Injection</button>
-                    </div>
-                    {/* Content Logic Same as before */}
-                    {editorTab === 'REGISTRY' && (
-                        <div className="flex-1 overflow-hidden flex flex-col">
-                             <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded shrink-0">
-                                <h3 className="text-[10px] text-gray-500 uppercase font-mono tracking-widest mb-3 flex items-center gap-2"><Plus className="w-3 h-3" /> Manual Entry</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
-                                    <select value={newAttrSystem} onChange={(e) => setNewAttrSystem(e.target.value as MagicSystem)} className="bg-black/40 border border-white/10 rounded text-xs text-gray-300 p-2 focus:border-magic-accent outline-none">
-                                        {Object.values(MagicSystem).map(sys => <option key={sys} value={sys}>{sys}</option>)}
-                                    </select>
-                                    <input type="text" placeholder="Name" value={newAttrName} onChange={(e) => setNewAttrName(e.target.value)} className="bg-black/40 border border-white/10 rounded text-xs text-gray-300 p-2 focus:border-magic-accent outline-none" />
-                                    <input type="text" placeholder="Kanji" value={newAttrKanji} onChange={(e) => setNewAttrKanji(e.target.value)} className="bg-black/40 border border-white/10 rounded text-xs text-gray-300 p-2 focus:border-magic-accent outline-none" />
-                                    <input type="text" placeholder="Reading" value={newAttrReading} onChange={(e) => setNewAttrReading(e.target.value)} className="bg-black/40 border border-white/10 rounded text-xs text-gray-300 p-2 focus:border-magic-accent outline-none" />
-                                </div>
-                                <button onClick={handleManualAdd} disabled={!newAttrName || !newAttrKanji || !newAttrReading} className="w-full py-2 bg-magic-accent/20 hover:bg-magic-accent/30 text-magic-accent border border-magic-accent/30 rounded text-xs uppercase tracking-widest transition-colors disabled:opacity-50">Register Attribute</button>
-                             </div>
-                             <div className="mb-4 relative shrink-0"><Search className="w-4 h-4 text-gray-500 absolute left-3 top-2.5" /><input type="text" placeholder="Search archives..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded pl-9 pr-3 py-2 text-sm text-gray-300 focus:border-magic-accent outline-none" /></div>
-                             <div className="flex-1 overflow-y-auto scrollbar-hide space-y-4 pr-2">
-                                 {Object.entries(sysAttributes).map(([sys, attrs]) => {
-                                     const filteredAttrs = (attrs as string[]).filter(a => a.toLowerCase().includes(searchTerm.toLowerCase()));
-                                     if (filteredAttrs.length === 0) return null;
-                                     return (
-                                        <div key={sys}><div className="text-[10px] text-gray-500 uppercase font-mono tracking-widest mb-2 border-b border-white/5 pb-1">{sys}</div><div className="grid grid-cols-2 gap-2">{filteredAttrs.map(attr => (<div key={attr} className="bg-white/5 border border-white/5 rounded p-2 flex justify-between items-center group hover:border-white/20 transition-colors"><div><div className="text-xs text-gray-200">{attr}</div><div className="text-[10px] text-gray-500 font-mono">{keywords[attr]?.kanji} / {keywords[attr]?.reading}</div></div></div>))}</div></div>
-                                     );
-                                 })}
-                             </div>
-                        </div>
-                    )}
-                    {/* ... Other tabs ... */}
-                 </div>
-             </div>
-        </div>
-      )}
-
       {showSettings && (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0a0a0f] border border-white/10 p-8 rounded-lg shadow-2xl max-w-md w-full relative">
             <button onClick={() => setShowSettings(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
             <h2 className="font-serif text-xl text-white mb-6 flex items-center gap-2"><Settings className="w-5 h-5 text-magic-accent" /> システム設定</h2>
             <div className="space-y-6">
+              {/* ... Settings content ... */}
               <div className="flex items-center justify-between"><div className="flex items-center gap-3"><Shield className="w-5 h-5 text-blue-400" /><div><div className="text-sm text-gray-200">高パフォーマンスモード</div><div className="text-xs text-gray-500">高度なパーティクルエフェクトを有効化</div></div></div><button onClick={() => setHighPerformance(!highPerformance)} className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${highPerformance ? 'bg-blue-500' : 'bg-gray-700'}`}><div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${highPerformance ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div>
               <div className="flex items-center justify-between"><div className="flex items-center gap-3"><Volume2 className="w-5 h-5 text-purple-400" /><div><div className="text-sm text-gray-200">システムオーディオ</div><div className="text-xs text-gray-500">インターフェース音を有効化</div></div></div><button onClick={() => setAudioEnabled(!audioEnabled)} className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${audioEnabled ? 'bg-purple-500' : 'bg-gray-700'}`}><div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${audioEnabled ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div>
               <div className="pt-6 border-t border-white/10"><button onClick={clearHistory} className="w-full py-3 border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded flex items-center justify-center gap-2 transition-colors text-xs uppercase tracking-widest"><Trash2 className="w-4 h-4" /> アーカイブ全消去</button></div>

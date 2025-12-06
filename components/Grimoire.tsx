@@ -1,14 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { ManifestedSpell, MagicSystem } from '../types';
-import { Scroll, Clock, ChevronRight, Zap, Hourglass, Hexagon, Star, Activity, Swords, ChevronDown, ChevronUp, ChevronLeft, Search, Filter, ArrowUpDown, Plus, Edit, Trash2, X } from 'lucide-react';
+import { Scroll, Zap, Hourglass, Hexagon, Star, Activity, Swords, Search, Trash2, X } from 'lucide-react';
 
 interface GrimoireProps {
   history: ManifestedSpell[];
   onSelect: (spell: ManifestedSpell) => void;
   isOpen: boolean;
   onToggle: () => void;
-  onAdd: () => void;
-  onEdit: (spell: ManifestedSpell) => void;
   onDelete: (id: string) => void;
 }
 
@@ -22,7 +20,7 @@ const getIcon = (system: MagicSystem) => {
   }
 };
 
-const Grimoire: React.FC<GrimoireProps> = ({ history, onSelect, isOpen, onToggle, onAdd, onEdit, onDelete }) => {
+const Grimoire: React.FC<GrimoireProps> = ({ history, onSelect, isOpen, onToggle, onDelete }) => {
   // Local State for Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'NEWEST' | 'OLDEST' | 'RANK_DESC' | 'DAMAGE_DESC'>('NEWEST');
@@ -87,7 +85,7 @@ const Grimoire: React.FC<GrimoireProps> = ({ history, onSelect, isOpen, onToggle
 
       {/* Toolbar */}
       <div className="p-3 border-b border-white/10 bg-black/20 shrink-0 space-y-3">
-          {/* Search & Add */}
+          {/* Search */}
           <div className="flex gap-2">
               <div className="relative flex-1">
                   <Search className="absolute left-2 top-2 w-3 h-3 text-gray-500" />
@@ -99,13 +97,6 @@ const Grimoire: React.FC<GrimoireProps> = ({ history, onSelect, isOpen, onToggle
                       className="w-full bg-black/40 border border-white/10 rounded pl-7 pr-2 py-1.5 text-xs text-white focus:border-magic-accent outline-none"
                   />
               </div>
-              <button 
-                onClick={onAdd}
-                className="bg-magic-accent/20 hover:bg-magic-accent/30 text-magic-accent border border-magic-accent/30 rounded px-2 flex items-center justify-center transition-colors"
-                title="Register New Spell"
-              >
-                  <Plus className="w-4 h-4" />
-              </button>
           </div>
 
           {/* Filters */}
@@ -179,13 +170,6 @@ const Grimoire: React.FC<GrimoireProps> = ({ history, onSelect, isOpen, onToggle
                 {/* Footer / Actions - Hidden by default, shown on hover or active */}
                 <div className="pt-2 border-t border-white/5 flex justify-end items-center opacity-40 group-hover:opacity-100 transition-opacity">
                     <div className="flex gap-2">
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onEdit(spell); }}
-                            className="p-1 hover:text-white text-gray-500 transition-colors"
-                            title="Edit Spell Definition"
-                        >
-                            <Edit className="w-3 h-3" />
-                        </button>
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDelete(spell.id); }}
                             className="p-1 hover:text-red-400 text-gray-500 transition-colors"

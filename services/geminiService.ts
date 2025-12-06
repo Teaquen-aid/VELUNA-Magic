@@ -38,7 +38,7 @@ export const extendAttributeKeywords = (newData: Record<string, { kanji: string,
   ATTRIBUTE_KEYWORDS = { ...ATTRIBUTE_KEYWORDS, ...newData };
 };
 
-export const DIVINE_PROTECTIONS: DivineProtectionDef[] = [
+export let DIVINE_PROTECTIONS: DivineProtectionDef[] = [
     { 
         id: 'none', 
         name: 'なし (None)', 
@@ -78,7 +78,7 @@ export const DIVINE_PROTECTIONS: DivineProtectionDef[] = [
     { id: 'kago_shadow', name: '影の加護', category: '特殊加護', description: '隠密・闇の力。', compatibleAttributes: ['闇属性', '常闇'], powerMultiplier: 6.0, lore: { deity: '影の王', symbol: '三日月', alias: '夜の友', conditions: { grant: '孤独', maintain: '隠密', loss: '日向' }, effects: { direct: '潜伏', indirect: '気配遮断', constraints: '光に弱い' }, hierarchy: { lower: '闇の加護', middle: '-', upper: '虚無の加護' }, role: '裏の監視者' } },
 ];
 
-export const DEFAULT_TOOLS: ToolDef[] = [
+export let DEFAULT_TOOLS: ToolDef[] = [
     { id: 'tool_staff', name: '樫の木の杖 (Oak Staff)', category: '杖', description: '汎用的な触媒。安定性が高い。', compatibleSystems: [MagicSystem.ELEMENTAL, MagicSystem.OTHER], powerBonus: 1.1 },
     { id: 'tool_wand', name: 'ミスリルの短杖 (Mithril Wand)', category: '短杖', description: '魔伝導率が高い。高速詠唱向け。', compatibleSystems: [MagicSystem.ELEMENTAL, MagicSystem.DAWN], powerBonus: 1.3 },
     { id: 'tool_grimoire', name: '古の魔導書 (Ancient Grimoire)', category: '魔導書', description: '複雑な術式を補助する。', compatibleSystems: [MagicSystem.CAUSAL, MagicSystem.CREATION], powerBonus: 1.5 },
@@ -106,7 +106,27 @@ let CUSTOM_TOOLS: ToolDef[] = [];
 export const getTools = () => [...DEFAULT_TOOLS, ...CUSTOM_TOOLS];
 
 export const registerTool = (tool: ToolDef) => {
-    CUSTOM_TOOLS.push(tool);
+    // Check if tool exists (update) or new
+    const idx = CUSTOM_TOOLS.findIndex(t => t.id === tool.id);
+    if (idx >= 0) {
+        CUSTOM_TOOLS[idx] = tool;
+    } else {
+        const defaultIdx = DEFAULT_TOOLS.findIndex(t => t.id === tool.id);
+        if (defaultIdx >= 0) {
+            DEFAULT_TOOLS[defaultIdx] = tool;
+        } else {
+            CUSTOM_TOOLS.push(tool);
+        }
+    }
+};
+
+export const registerProtection = (prot: DivineProtectionDef) => {
+    const idx = DIVINE_PROTECTIONS.findIndex(p => p.id === prot.id);
+    if (idx >= 0) {
+        DIVINE_PROTECTIONS[idx] = prot;
+    } else {
+        DIVINE_PROTECTIONS.push(prot);
+    }
 };
 
 // Modifiers for spell construction
