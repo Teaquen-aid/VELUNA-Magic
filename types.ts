@@ -126,6 +126,8 @@ export interface SpellAnalysis {
   // Equipment / Buffs
   protection: DivineProtectionDef;
   tool: ToolDef;
+  toolReinforcement: number; // -3 to +3
+  buffLevel: number; // -5 to +5 (New field)
 
   predictedDamage: number; // Calculated damage value
   calculationFormula?: string; // Formula string for transparency
@@ -136,24 +138,6 @@ export interface SpellAnalysis {
 export interface ManifestedSpell extends SpellAnalysis {
   id: string; // Format: MGxxxx
   timestamp: number;
-}
-
-export interface EnemyDef {
-    id: string;
-    name: string;
-    maxHp: number;
-    currentHp: number;
-    attribute: string;
-    description: string;
-}
-
-export interface CombatLogEntry {
-    id: string;
-    timestamp: number;
-    message: string;
-    damage?: number;
-    isCritical?: boolean;
-    effectiveness?: 'SUPER' | 'NORMAL' | 'POOR';
 }
 
 export type AppState = 'IDLE' | 'ANALYZING' | 'MANIFESTING' | 'READY' | 'COMPLETE' | 'ERROR';
@@ -177,3 +161,21 @@ export const RING_DATA: Record<number, { name: string; alias: string }> = {
   6: { name: "儀式的共鳴 (Ritual Resonance)", alias: "最上級魔術 (Supreme Magic)" },
   7: { name: "根源改変 (Origin Modification)", alias: "特級魔術 (Special Magic)" },
 };
+
+export interface EnemyDef {
+  id: string;
+  name: string;
+  currentHp: number;
+  maxHp: number;
+  attribute: string;
+  description: string;
+}
+
+export interface CombatLogEntry {
+  id: string;
+  timestamp: number;
+  message: string;
+  damage?: number;
+  isCritical?: boolean;
+  effectiveness?: 'NORMAL' | 'SUPER' | 'POOR' | 'IMMUNE';
+}

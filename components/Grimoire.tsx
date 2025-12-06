@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ManifestedSpell, MagicSystem } from '../types';
-import { Scroll, Zap, Hourglass, Hexagon, Star, Activity, Swords, Search, Trash2, X } from 'lucide-react';
+import { Scroll, Zap, Hourglass, Hexagon, Star, Activity, Swords, Search, Trash2, X, Heart } from 'lucide-react';
 
 interface GrimoireProps {
   history: ManifestedSpell[];
@@ -133,54 +133,56 @@ const Grimoire: React.FC<GrimoireProps> = ({ history, onSelect, isOpen, onToggle
         {filteredHistory.length === 0 ? (
             <div className="text-center text-gray-600 py-10 text-xs font-mono">No spells found in Grimoire.</div>
         ) : (
-            filteredHistory.map((spell) => (
-            <div 
-                key={spell.id}
-                className="group bg-white/5 hover:bg-white/10 border border-white/5 rounded p-2 transition-all hover:border-magic-accent/50 relative overflow-hidden flex flex-col gap-2"
-            >
-                {/* Rank Indicator Bar */}
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-magic-accent to-transparent opacity-50"></div>
-
+            filteredHistory.map((spell) => {
+                const isRecovery = spell.attribute.includes('光') || spell.attribute.includes('神聖') || spell.attribute.includes('回復');
+                return (
                 <div 
-                    className="flex gap-3 items-center cursor-pointer"
-                    onClick={() => onSelect(spell)}
+                    key={spell.id}
+                    className="group bg-white/5 hover:bg-white/10 border border-white/5 rounded p-2 transition-all hover:border-magic-accent/50 relative overflow-hidden flex flex-col gap-2"
                 >
-                    <div className="w-10 h-10 flex items-center justify-center rounded bg-gray-900 border border-white/10 shrink-0">
-                        {getIcon(spell.system)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                            <h4 className="font-serif text-white text-sm truncate group-hover:text-magic-accent transition-colors">{spell.name}</h4>
-                            <span className="text-[9px] font-mono text-gray-500 border border-white/10 px-1 rounded">R{spell.rank}</span>
+                    {/* Rank Indicator Bar */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-magic-accent to-transparent opacity-50"></div>
+
+                    <div 
+                        className="flex gap-3 items-center cursor-pointer"
+                        onClick={() => onSelect(spell)}
+                    >
+                        <div className="w-10 h-10 flex items-center justify-center rounded bg-gray-900 border border-white/10 shrink-0">
+                            {getIcon(spell.system)}
                         </div>
                         
-                        <div className="flex justify-between items-center mt-1">
-                            <p className="text-[10px] text-gray-400 truncate max-w-[100px]">{spell.attribute}</p>
-                            {spell.predictedDamage && (
-                            <span className="flex items-center gap-1 text-[9px] font-mono text-red-400/80">
-                                <Swords className="w-2 h-2" />
-                                {(spell.predictedDamage > 9999 ? (spell.predictedDamage/1000).toFixed(0) + 'k' : spell.predictedDamage)}
-                            </span>
-                            )}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start">
+                                <h4 className="font-serif text-white text-sm truncate group-hover:text-magic-accent transition-colors">{spell.name}</h4>
+                                <span className="text-[9px] font-mono text-gray-500 border border-white/10 px-1 rounded">R{spell.rank}</span>
+                            </div>
+                            
+                            <div className="flex justify-between items-center mt-1">
+                                <p className="text-[10px] text-gray-400 truncate max-w-[100px]">{spell.attribute}</p>
+                                {spell.predictedDamage && (
+                                <span className={`flex items-center gap-1 text-[9px] font-mono ${isRecovery ? 'text-green-400/80' : 'text-red-400/80'}`}>
+                                    {isRecovery ? <Heart className="w-2 h-2" /> : <Swords className="w-2 h-2" />}
+                                    {(spell.predictedDamage > 9999 ? (spell.predictedDamage/1000).toFixed(0) + 'k' : spell.predictedDamage)}
+                                </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer / Actions - Hidden by default, shown on hover or active */}
+                    <div className="pt-2 border-t border-white/5 flex justify-end items-center opacity-40 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onDelete(spell.id); }}
+                                className="p-1 hover:text-red-400 text-gray-500 transition-colors"
+                                title="Remove from Grimoire"
+                            >
+                                <Trash2 className="w-3 h-3" />
+                            </button>
                         </div>
                     </div>
                 </div>
-
-                {/* Footer / Actions - Hidden by default, shown on hover or active */}
-                <div className="pt-2 border-t border-white/5 flex justify-end items-center opacity-40 group-hover:opacity-100 transition-opacity">
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onDelete(spell.id); }}
-                            className="p-1 hover:text-red-400 text-gray-500 transition-colors"
-                            title="Remove from Grimoire"
-                        >
-                            <Trash2 className="w-3 h-3" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-            ))
+            )})
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ManifestedSpell, MagicSystem, RING_DATA, DivineProtectionDef } from '../types';
-import { Sparkles, Zap, Hourglass, Hexagon, Star, Activity, Eye, Database, Cpu, Flame, Droplets, Wind, Mountain, Swords, ChevronDown, ChevronUp, Thermometer, Heart, CloudFog, Shield, Hammer, BookOpen, X, Crown } from 'lucide-react';
+import { Sparkles, Zap, Hourglass, Hexagon, Star, Activity, Eye, Database, Cpu, Flame, Droplets, Wind, Mountain, Swords, ChevronDown, ChevronUp, Thermometer, Heart, CloudFog, Shield, Hammer, BookOpen, X, Crown, Cross, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface SpellResultProps {
   spell: ManifestedSpell;
@@ -139,6 +139,14 @@ const SpellResult: React.FC<SpellResultProps> = ({ spell, onReset }) => {
   const ringInfo = RING_DATA[spell.rank] || { name: "不明", alias: "Unknown" };
   const visualIcon = getSystemVisual(spell.system, spell.attribute);
 
+  const isRecovery = spell.attribute.includes('光') || spell.attribute.includes('神聖') || spell.attribute.includes('回復');
+  const damageColorClass = isRecovery 
+        ? "bg-green-900/10 border-green-500/20 text-green-200 hover:bg-green-900/20 shadow-[inset_0_0_20px_rgba(16,185,129,0.1)]" 
+        : "bg-red-900/10 border-red-500/20 text-red-200 hover:bg-red-900/20 shadow-[inset_0_0_20px_rgba(239,68,68,0.1)]";
+  
+  const damageIconClass = isRecovery ? "text-green-400" : "text-red-400";
+  const damageValueClass = isRecovery ? "text-green-200 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "text-red-200 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]";
+
   return (
     <div className="w-full max-w-5xl mx-auto p-2 md:p-4">
       {showProtectionDetails && (
@@ -242,16 +250,6 @@ const SpellResult: React.FC<SpellResultProps> = ({ spell, onReset }) => {
                   <DataRow label="起源 (Origin)" value={spell.lore.origin} full />
                </div>
             </div>
-
-            {/* Chant Section */}
-            <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs font-mono text-gray-500 uppercase tracking-widest">
-                   詠唱 (Chant)
-                </div>
-                <div className="p-3 bg-black/40 border-l-2 border-magic-accent text-sm italic text-gray-300 font-serif break-words">
-                    "{spell.chantFeedback}"
-                </div>
-            </div>
             
              {/* Famous User */}
             <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -287,8 +285,28 @@ const SpellResult: React.FC<SpellResultProps> = ({ spell, onReset }) => {
                          <div className="text-[9px] text-gray-500 font-mono uppercase mb-0.5 flex items-center gap-1">
                              <Hammer className="w-3 h-3 shrink-0 text-blue-400" /> Tool
                          </div>
-                         <div className="text-xs text-gray-300 font-sans truncate">{spell.tool.name} <span className="text-blue-500 font-mono text-[10px]">x{spell.tool.powerBonus}</span></div>
+                         <div className="text-xs text-gray-300 font-sans truncate">
+                             {spell.tool.name} 
+                             {spell.toolReinforcement !== 0 && (
+                                <span className={`font-mono text-[10px] ml-1 ${spell.toolReinforcement > 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                                    {spell.toolReinforcement > 0 ? '+' : ''}{spell.toolReinforcement}
+                                </span>
+                             )}
+                         </div>
                       </div>
+                      
+                      {/* Buff Display */}
+                      {spell.buffLevel !== 0 && (
+                          <div className="col-span-2 p-2 bg-black/40 border border-white/5 rounded flex items-center justify-between">
+                             <div className="text-[9px] text-gray-500 font-mono uppercase flex items-center gap-1">
+                                {spell.buffLevel > 0 ? <ArrowUp className="w-3 h-3 text-cyan-400" /> : <ArrowDown className="w-3 h-3 text-pink-500" />}
+                                Resonance Amp
+                             </div>
+                             <div className={`text-xs font-mono font-bold ${spell.buffLevel > 0 ? 'text-cyan-400' : 'text-pink-500'}`}>
+                                Lv {spell.buffLevel > 0 ? '+' : ''}{spell.buffLevel}
+                             </div>
+                          </div>
+                      )}
                    </div>
                </div>
             </div>
@@ -297,14 +315,14 @@ const SpellResult: React.FC<SpellResultProps> = ({ spell, onReset }) => {
             <div className="space-y-2 mt-2">
                 <div 
                     onClick={() => setShowFormula(!showFormula)}
-                    className="p-3 bg-red-900/10 border border-red-500/20 rounded flex items-center justify-between shadow-[inset_0_0_20px_rgba(239,68,68,0.1)] cursor-pointer hover:bg-red-900/20 transition-all group"
+                    className={`p-3 rounded flex items-center justify-between cursor-pointer transition-all group ${damageColorClass}`}
                 >
-                    <div className="flex items-center gap-2 text-red-400/80 uppercase font-mono text-xs tracking-widest min-w-0">
-                        <Swords className="w-4 h-4 shrink-0" />
-                        <span className="truncate">Predicted Damage</span>
+                    <div className={`flex items-center gap-2 uppercase font-mono text-xs tracking-widest min-w-0 ${isRecovery ? 'text-green-400' : 'text-red-400'}`}>
+                        {isRecovery ? <Heart className={`w-4 h-4 shrink-0 ${damageIconClass}`} /> : <Swords className={`w-4 h-4 shrink-0 ${damageIconClass}`} />}
+                        <span className="truncate">{isRecovery ? 'Predicted Recovery' : 'Predicted Damage'}</span>
                         {showFormula ? <ChevronUp className="w-3 h-3 shrink-0" /> : <ChevronDown className="w-3 h-3 opacity-50 group-hover:opacity-100 shrink-0" />}
                     </div>
-                    <div className="text-2xl font-mono font-bold text-red-200 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] shrink-0 ml-2">
+                    <div className={`text-2xl font-mono font-bold shrink-0 ml-2 ${damageValueClass}`}>
                         {spell.predictedDamage ? spell.predictedDamage.toLocaleString() : '---'}
                     </div>
                 </div>

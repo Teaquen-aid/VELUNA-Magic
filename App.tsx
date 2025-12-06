@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { constructSpell, extendAttributeKeywords, ATTRIBUTE_KEYWORDS, DIVINE_PROTECTIONS, getTools, PREDEFINED_GRIMOIRE, DEFAULT_TOOLS, ENEMIES, CHARACTER_PRESETS } from './services/geminiService';
-import { AppState, ManifestedSpell, SpellAnalysis, INVOCATION_STEPS, MagicSystem, SYSTEM_ATTRIBUTES, RING_DATA, CasterStatus, SpellEnvironment, ToolDef, EnemyDef, CombatLogEntry, WeatherType, CharacterPreset, DivineProtectionDef } from './types';
+import { constructSpell, extendAttributeKeywords, ATTRIBUTE_KEYWORDS, DIVINE_PROTECTIONS, getTools, PREDEFINED_GRIMOIRE, DEFAULT_TOOLS, CHARACTER_PRESETS } from './services/geminiService';
+import { AppState, ManifestedSpell, SpellAnalysis, INVOCATION_STEPS, MagicSystem, SYSTEM_ATTRIBUTES, RING_DATA, CasterStatus, SpellEnvironment, ToolDef, WeatherType, CharacterPreset, DivineProtectionDef } from './types';
 import MagicCircle from './components/MagicCircle';
 import SpellResult from './components/SpellResult';
 import Grimoire from './components/Grimoire';
-import CombatPanel from './components/CombatPanel';
-import { Box, CircleDot, Layers, Component, Sparkles, Activity, Settings, X, Shield, Trash2, Volume2, Edit2, ChevronUp, Waves, Zap, Crown, Heart, Thermometer, CloudFog, MapPin, Gauge, Hammer, Pause, Play, Book, Skull, ArrowUp, AlertTriangle, Swords, Sun, CloudRain, Cloud, Dices, Plus } from 'lucide-react';
+import { Box, CircleDot, Layers, Component, Sparkles, Activity, Edit2, ChevronUp, Waves, Zap, Crown, Heart, Thermometer, CloudFog, MapPin, Gauge, Hammer, Pause, Play, Book, Skull, AlertTriangle, Sun, CloudRain, Cloud, Dices, Plus, Minus, RefreshCw } from 'lucide-react';
 
 const FAILURE_REASONS = [
   "術式回路の臨界崩壊 (Circuit Criticality Collapse)",
@@ -14,6 +13,107 @@ const FAILURE_REASONS = [
   "マナ供給パスの遮断 (Mana Supply Interrupted)",
   "無意識領域による拒絶 (Subconscious Rejection)"
 ];
+
+// ECG Monitor Component using Canvas
+const ECGMonitor: React.FC<{ bpm: number }> = ({ bpm }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let animationFrameId: number;
+        let x = 0;
+        let lastY = canvas.height / 2;
+        let pTime = performance.now();
+        
+        // Config
+        const speed = 2; // px per frame
+        const amplitude = canvas.height * 0.4;
+        const baseLine = canvas.height / 2;
+        
+        // ECG waveform relative points (normalized time 0-1, normalized height -1 to 1)
+        // P, Q, R, S, T complex simulation
+        const complex = [
+            { t: 0.0, v: 0 },
+            { t: 0.1, v: -0.1 }, // P wave start
+            { t: 0.2, v: 0 },
+            { t: 0.25, v: 0.1 }, // Q
+            { t: 0.3, v: -0.8 }, // R (up is negative Y in canvas usually, but lets stick to standard coord for math then flip)
+            { t: 0.35, v: 0.3 }, // S
+            { t: 0.4, v: 0 },
+            { t: 0.5, v: -0.2 }, // T wave
+            { t: 0.6, v: 0 },
+            { t: 1.0, v: 0 },
+        ];
+
+        // We cycle through the "complex" based on BPM
+        let cycleProgress = 0; // 0 to 1
+
+        const render = (time: number) => {
+            const dt = time - pTime;
+            pTime = time;
+
+            // Fade out old data
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate current Y
+            // Interval in ms = 60000 / bpm
+            const interval = 60000 / (bpm || 60);
+            cycleProgress = (time % interval) / interval;
+
+            let currentVal = 0;
+            // Linear interpolation of complex
+            // Find segment
+            for (let i = 0; i < complex.length - 1; i++) {
+                if (cycleProgress >= complex[i].t && cycleProgress <= complex[i+1].t) {
+                    const segmentT = (cycleProgress - complex[i].t) / (complex[i+1].t - complex[i].t);
+                    currentVal = complex[i].v + (complex[i+1].v - complex[i].v) * segmentT;
+                    break;
+                }
+            }
+            
+            // Add some jitter/noise
+            currentVal += (Math.random() - 0.5) * 0.05;
+
+            const targetY = baseLine + (currentVal * amplitude);
+
+            // Draw line
+            ctx.beginPath();
+            ctx.moveTo(x, lastY);
+            // Move x
+            x += speed;
+            if (x > canvas.width) {
+                x = 0;
+                ctx.moveTo(x, targetY); // Prevent wrapping line
+            }
+            
+            ctx.lineTo(x, targetY);
+            ctx.strokeStyle = bpm > 120 ? '#ef4444' : bpm < 50 ? '#3b82f6' : '#10b981';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            lastY = targetY;
+
+            animationFrameId = requestAnimationFrame(render);
+        };
+
+        render(performance.now());
+
+        return () => cancelAnimationFrame(animationFrameId);
+    }, [bpm]);
+
+    return (
+        <div className="w-full h-12 bg-black border border-white/10 rounded overflow-hidden relative">
+            <div className="absolute inset-0 bg-[linear-gradient(transparent_90%,rgba(0,255,0,0.1)_90%),linear-gradient(90deg,transparent_90%,rgba(0,255,0,0.1)_90%)] bg-[size:10px_10px]"></div>
+            <canvas ref={canvasRef} width={200} height={48} className="w-full h-full relative z-10 block" />
+            <div className="absolute top-1 right-1 text-[9px] font-mono text-white/50">{bpm} BPM</div>
+        </div>
+    );
+};
 
 // Vertical HP Slider
 const VerticalHpSlider: React.FC<{ hp: number; maxHp: number; onChange: (val: number) => void }> = ({ hp, maxHp, onChange }) => {
@@ -182,11 +282,16 @@ const CircularSlider: React.FC<{ value: number; onChange: (val: number) => void;
 };
 
 // Sensor Component
-const SensorData: React.FC<{ icon: React.ReactNode; label: string; value: string; unit?: string; color?: string; blink?: boolean }> = ({ icon, label, value, unit, color = "text-white", blink = false }) => (
-  <div className={`bg-white/5 border border-white/5 rounded p-2 flex flex-col justify-between h-full hover:bg-white/10 transition-colors ${blink ? 'animate-pulse bg-red-900/20 border-red-500/30' : ''} min-w-0 overflow-hidden`}>
+const SensorData: React.FC<{ icon: React.ReactNode; label: string; value: string; unit?: string; color?: string; blink?: boolean; onRefresh?: () => void }> = ({ icon, label, value, unit, color = "text-white", blink = false, onRefresh }) => (
+  <div className={`bg-white/5 border border-white/5 rounded p-2 flex flex-col justify-between h-full hover:bg-white/10 transition-colors ${blink ? 'animate-pulse bg-red-900/20 border-red-500/30' : ''} min-w-0 overflow-hidden relative group`}>
      <div className="flex items-center gap-1.5 text-gray-500 mb-1 min-w-0">
         <div style={{ color: color }} className="opacity-80 shrink-0">{icon}</div>
         <span className="text-[9px] font-mono uppercase tracking-wider truncate">{label}</span>
+        {onRefresh && (
+           <button onClick={onRefresh} className="absolute right-1 top-1 text-gray-600 hover:text-white transition-colors opacity-0 group-hover:opacity-100">
+              <RefreshCw className="w-3 h-3" />
+           </button>
+        )}
      </div>
      <div className="text-sm font-mono font-medium truncate flex items-baseline gap-1 min-w-0" style={{ color: color === "text-white" ? undefined : color }}>
         <span className="truncate">{value}</span> {unit && <span className="text-[10px] text-gray-500 shrink-0">{unit}</span>}
@@ -201,7 +306,6 @@ export default function App() {
   const [analysis, setAnalysis] = useState<SpellAnalysis | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [invocationStep, setInvocationStep] = useState<number>(0);
-  const [showSettings, setShowSettings] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Chance Mode State
@@ -220,12 +324,6 @@ export default function App() {
   
   // Config Tab State
   const [configTab, setConfigTab] = useState<'MAGIC' | 'PROTECTION' | 'TOOL' | 'CHARACTER'>('MAGIC');
-
-  // Combat State
-  const [combatOpen, setCombatOpen] = useState(false);
-  const [activeEnemy, setActiveEnemy] = useState<EnemyDef>(ENEMIES[0]);
-  const [combatLogs, setCombatLogs] = useState<CombatLogEntry[]>([]);
-  const [lastProcessedSpellId, setLastProcessedSpellId] = useState<string | null>(null);
 
   // Attributes & Tools
   const [sysAttributes, setSysAttributes] = useState<Record<MagicSystem, string[]>>(SYSTEM_ATTRIBUTES);
@@ -248,6 +346,8 @@ export default function App() {
         environment: { location: { lat: 0, lng: 0, alt: 0 }, temperature: 0, humidity: 0, wDensity: 0, weather: 'SUNNY' },
         protection: DIVINE_PROTECTIONS[0],
         tool: DEFAULT_TOOLS[0],
+        toolReinforcement: 0,
+        buffLevel: 0, // Initialize buffLevel
         calculationFormula: '',
         visualPrompt: '',
         domain: '',
@@ -272,9 +372,8 @@ export default function App() {
     hp: 100, maxHp: 100, heartRate: 72, bodyTemp: 36.6, bloodPressure: "118/76", respiration: 16, spO2: 98.5, consciousnessLevel: "Clear", emotionIndex: 45
   });
 
-  // Settings State
+  // Settings State - REMOVED SETTINGS STATE
   const [highPerformance, setHighPerformance] = useState(true);
-  const [audioEnabled, setAudioEnabled] = useState(true);
 
   // Selection State
   const [activityRate, setActivityRate] = useState<number>(20.0);
@@ -283,6 +382,8 @@ export default function App() {
   const [attribute, setAttribute] = useState<string>(SYSTEM_ATTRIBUTES[MagicSystem.ELEMENTAL][0]);
   const [selectedProtection, setSelectedProtection] = useState<string>('none');
   const [selectedToolId, setSelectedToolId] = useState<string>('tool_none');
+  const [toolReinforcement, setToolReinforcement] = useState<number>(0); 
+  const [buffLevel, setBuffLevel] = useState<number>(0); // Buff/Debuff Level -5 to +5
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [activeSpellId, setActiveSpellId] = useState<string | null>(null);
 
@@ -307,6 +408,13 @@ export default function App() {
           wDensity: Math.floor(Math.random() * 8000) + 1500,
           weather: newWeather
       });
+  };
+
+  const updateBodyTemp = () => {
+      setVitalData(prev => ({
+          ...prev,
+          bodyTemp: parseFloat((Math.max(34.0, Math.min(42.0, prev.bodyTemp + (Math.random() * 0.6 - 0.3))).toFixed(1)))
+      }));
   };
 
   const handleAddCharacter = () => {
@@ -363,7 +471,6 @@ export default function App() {
             return {
                 ...prev,
                 heartRate: newHr,
-                bodyTemp: parseFloat((Math.max(35.5, Math.min(40.0, prev.bodyTemp + (Math.random() * 0.2 - 0.1))).toFixed(1))),
                 spO2: parseFloat((Math.max(85, Math.min(100, 98.5 - (1-hpRatio)*5 + (Math.random() * 0.4 - 0.2))).toFixed(1))), 
                 emotionIndex: newEmotion,
                 respiration: Math.max(10, Math.min(45, 16 + (1-hpRatio)*20 + Math.floor(Math.random() * 3 - 1))),
@@ -373,56 +480,6 @@ export default function App() {
     }, 1500); 
     return () => clearInterval(interval);
   }, [simulateVitals]);
-
-  // COMBAT LOGIC
-  useEffect(() => {
-      if (combatOpen && currentSpell && currentSpell.id !== lastProcessedSpellId) {
-          handleCombatTurn(currentSpell);
-          setLastProcessedSpellId(currentSpell.id);
-      }
-  }, [combatOpen, currentSpell, lastProcessedSpellId]);
-
-  const handleCombatTurn = (spell: ManifestedSpell) => {
-      if (activeEnemy.currentHp <= 0) return;
-      let multiplier = 1.0;
-      let effectType: 'SUPER' | 'NORMAL' | 'POOR' = 'NORMAL';
-      const spellAttr = spell.attribute;
-      const enemyAttr = activeEnemy.attribute;
-      if (spellAttr.includes('火') && enemyAttr.includes('風')) { multiplier = 1.5; effectType = 'SUPER'; }
-      else if (spellAttr.includes('風') && enemyAttr.includes('土')) { multiplier = 1.5; effectType = 'SUPER'; }
-      else if (spellAttr.includes('土') && enemyAttr.includes('水')) { multiplier = 1.5; effectType = 'SUPER'; }
-      else if (spellAttr.includes('水') && enemyAttr.includes('火')) { multiplier = 1.5; effectType = 'SUPER'; }
-      else if (spellAttr.includes('光') && enemyAttr.includes('闇')) { multiplier = 1.5; effectType = 'SUPER'; }
-      else if (spellAttr.includes('風') && enemyAttr.includes('火')) { multiplier = 0.5; effectType = 'POOR'; }
-      else if (spellAttr.includes('土') && enemyAttr.includes('風')) { multiplier = 0.5; effectType = 'POOR'; }
-      else if (spellAttr.includes('水') && enemyAttr.includes('土')) { multiplier = 0.5; effectType = 'POOR'; }
-      else if (spellAttr.includes('火') && enemyAttr.includes('水')) { multiplier = 0.5; effectType = 'POOR'; }
-
-      const actualDamage = Math.floor(spell.predictedDamage * multiplier);
-      const isCrit = Math.random() < 0.1;
-      const finalDamage = isCrit ? Math.floor(actualDamage * 1.5) : actualDamage;
-      
-      const logEntry: CombatLogEntry = {
-          id: `log_${Date.now()}`,
-          timestamp: Date.now(),
-          message: `${spell.name} hit ${activeEnemy.name}!`,
-          damage: finalDamage,
-          isCritical: isCrit,
-          effectiveness: effectType
-      };
-      setCombatLogs(prev => [...prev, logEntry]);
-      setActiveEnemy(prev => ({ ...prev, currentHp: Math.max(0, prev.currentHp - finalDamage) }));
-  };
-
-  const handleResetCombat = () => {
-      setActiveEnemy(prev => ({ ...prev, currentHp: prev.maxHp }));
-      setCombatLogs([]);
-  };
-
-  const handleSelectEnemy = (id: string) => {
-      const enemy = ENEMIES.find(e => e.id === id);
-      if (enemy) { setActiveEnemy(enemy); setCombatLogs([]); }
-  };
 
   const calculateOutput = () => {
     const baseOutput = envData.wDensity * (activityRate / 100);
@@ -486,7 +543,7 @@ export default function App() {
       if (!knownSpell) knownSpell = grimoire.find(s => s.system === system && s.rank === rank && s.attribute === attribute);
       
       const spellAnalysis = await constructSpell(
-          rank, system, attribute, selectedProtection, selectedToolId, envData, vitalData, knownSpell
+          rank, system, attribute, selectedProtection, selectedToolId, envData, vitalData, knownSpell, toolReinforcement, buffLevel
       );
 
       // Apply multiplier
@@ -595,7 +652,7 @@ export default function App() {
     if (window.innerWidth < 768) setIsGrimoireOpen(false);
     setAppState('IDLE');
   };
-  const clearHistory = () => { setGrimoire([]); setShowSettings(false); };
+  const clearHistory = () => { setGrimoire([]); };
   
   const handleDeleteSpell = (spellId: string) => { setGrimoire(prev => prev.filter(s => s.id !== spellId)); };
 
@@ -628,9 +685,6 @@ export default function App() {
   const isIdle = appState === 'IDLE';
 
   // Container Animation Logic for Magic Circle
-  // IDLE: Opacity 0 (Hidden)
-  // ANALYZING/MANIFESTING/READY: Scale 125/110, Opacity 100
-  // COMPLETE: Scale [5], Opacity 0 (ZOOM EFFECT!)
   const circleContainerClass = `transition-all duration-700 ease-in-out flex justify-center items-center absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none 
     ${appState === 'IDLE' ? 'opacity-0 scale-50' : 
       appState === 'COMPLETE' ? 'opacity-0 scale-[5] pointer-events-none duration-500' : 
@@ -639,7 +693,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#050505] text-gray-200 font-sans selection:bg-magic-accent selection:text-white flex overflow-hidden">
       
-      {/* Chance Mode Overlay */}
+      {/* ... (Chance Mode and Character Add Modal remain the same) ... */}
       {chanceMode && (
         <div className="fixed inset-0 z-[150] bg-black/90 flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
             <div className="text-red-500 font-serif text-2xl md:text-4xl mb-2 tracking-widest animate-pulse">CRITICAL RESONANCE</div>
@@ -674,7 +728,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Add Character Modal */}
       {showCharAdd && (
           <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-[#0f172a] border border-white/20 rounded-lg max-w-sm w-full p-6 animate-in zoom-in-95">
@@ -721,7 +774,7 @@ export default function App() {
              </div>
           )}
 
-          {/* MAGIC CIRCLE CONTAINER - Handles Zoom Effect */}
+          {/* MAGIC CIRCLE CONTAINER */}
           <div className={circleContainerClass}>
             <MagicCircle 
                 state={appState === 'COMPLETE' ? 'IDLE' : appState} 
@@ -750,20 +803,24 @@ export default function App() {
                        </div>
                    </div>
 
-                   {/* Sensor Data - Updates with min-w-0 */}
+                   {/* Sensor Data - Updated with ECG Monitor and Temp Button */}
                    <div className="space-y-2">
                       <div className="flex items-center justify-between border-b border-white/5 pb-1">
                           <div className="text-[10px] font-mono text-gray-600 uppercase tracking-widest flex items-center gap-2"><Heart className="w-3 h-3" /> Live Biometrics</div>
                           <button onClick={() => setSimulateVitals(!simulateVitals)} className={`text-xs hover:text-white transition-colors ${simulateVitals ? 'text-green-500' : 'text-red-500'}`}>{simulateVitals ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}</button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                          <SensorData icon={<Heart size={14} />} label="HR" value={vitalData.heartRate.toString()} unit="bpm" color={vitalData.heartRate > 120 ? '#ef4444' : '#ffffff'} blink={vitalData.heartRate > 150} />
+                      
+                      {/* ECG Monitor Replacement */}
+                      <ECGMonitor bpm={vitalData.heartRate} />
+
+                      <div className="grid grid-cols-2 gap-2 mt-2">
                           <SensorData icon={<Activity size={14} />} label="Psyche" value={vitalData.emotionIndex.toString()} unit="%" color="#8b5cf6" />
-                          <SensorData icon={<Thermometer size={14} />} label="Temp" value={vitalData.bodyTemp.toString()} unit="°C" />
+                          <SensorData icon={<Thermometer size={14} />} label="Temp" value={vitalData.bodyTemp.toString()} unit="°C" onRefresh={updateBodyTemp} />
                            <SensorData icon={<Gauge size={14} />} label="SpO2" value={vitalData.spO2.toFixed(1)} unit="%" color={vitalData.spO2 < 95 ? '#fbbf24' : '#10b981'} />
                       </div>
                    </div>
 
+                   {/* Env Sensors (Kept same) */}
                    <div className="space-y-2">
                       <div className="flex items-center justify-between border-b border-white/5 pb-1">
                           <div className="text-[10px] font-mono text-gray-600 uppercase tracking-widest flex items-center gap-2 min-w-0">
@@ -784,7 +841,7 @@ export default function App() {
 
                 {/* Right Column */}
                 <div className="lg:col-span-9 flex flex-col justify-center">
-                  {/* Character Selection */}
+                  {/* ... Character Selection (Kept same) ... */}
                   <div className="mb-6 bg-black/20 p-4 rounded border border-white/5">
                       <div className="flex justify-between items-center mb-2">
                           <div className="text-xs font-mono text-gray-500 uppercase">Resonance Persona</div>
@@ -881,6 +938,32 @@ export default function App() {
                                         {sysAttributes[system]?.map(renderAttrButton) || []}
                                      </div>
                                   </div>
+
+                                  {/* Buff/Debuff Control (Resonance Amp) - Range Slider */}
+                                  <div className="bg-white/5 border border-white/10 p-3 rounded">
+                                      <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-3 flex justify-between">
+                                        <span>Resonance Amp (Buff/Debuff)</span>
+                                        <span className={buffLevel > 0 ? 'text-cyan-400' : buffLevel < 0 ? 'text-pink-500' : 'text-gray-400'}>
+                                            {buffLevel > 0 ? '+' : ''}{buffLevel * 20}%
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                          <div className="text-[10px] font-mono text-pink-500">-5</div>
+                                          <input 
+                                            type="range" 
+                                            min="-5" 
+                                            max="5" 
+                                            step="1" 
+                                            value={buffLevel}
+                                            onChange={(e) => setBuffLevel(parseInt(e.target.value))}
+                                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                                          />
+                                          <div className="text-[10px] font-mono text-cyan-400">+5</div>
+                                      </div>
+                                      <div className="text-center mt-1 text-[9px] text-gray-500 font-mono">
+                                          Lv {buffLevel}
+                                      </div>
+                                  </div>
                               </div>
                           )}
 
@@ -899,16 +982,30 @@ export default function App() {
                           )}
 
                           {configTab === 'TOOL' && (
-                              <div className="space-y-2">
-                                  {allTools.map((tool) => (
-                                      <button key={tool.id} onClick={() => setSelectedToolId(tool.id)} className={`w-full text-left p-2 border rounded flex justify-between items-center group transition-colors ${selectedToolId === tool.id ? 'bg-blue-500/20 border-blue-500' : 'border-white/10 hover:bg-white/5'}`}>
-                                          <div className="min-w-0 pr-2">
-                                              <div className={`text-xs font-bold truncate ${selectedToolId === tool.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{tool.name}</div>
-                                              <div className="text-[9px] text-gray-500 truncate">{tool.category}</div>
+                              <div className="space-y-4">
+                                  <div className="space-y-2">
+                                      {allTools.map((tool) => (
+                                          <button key={tool.id} onClick={() => setSelectedToolId(tool.id)} className={`w-full text-left p-2 border rounded flex justify-between items-center group transition-colors ${selectedToolId === tool.id ? 'bg-blue-500/20 border-blue-500' : 'border-white/10 hover:bg-white/5'}`}>
+                                              <div className="min-w-0 pr-2">
+                                                  <div className={`text-xs font-bold truncate ${selectedToolId === tool.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{tool.name}</div>
+                                                  <div className="text-[9px] text-gray-500 truncate">{tool.category}</div>
+                                              </div>
+                                              {selectedToolId === tool.id && <Hammer className="w-4 h-4 text-blue-500 shrink-0" />}
+                                          </button>
+                                      ))}
+                                  </div>
+                                  
+                                  {/* Tool Reinforcement UI */}
+                                  <div className="bg-white/5 border border-white/10 p-3 rounded">
+                                      <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-2">Weapon Reinforcement</div>
+                                      <div className="flex items-center justify-between">
+                                          <button onClick={() => setToolReinforcement(prev => Math.max(-3, prev - 1))} className="p-2 border border-white/10 rounded hover:bg-white/10 text-gray-300 disabled:opacity-50" disabled={toolReinforcement <= -3}><Minus className="w-4 h-4" /></button>
+                                          <div className={`font-mono font-bold text-lg ${toolReinforcement > 0 ? 'text-blue-400' : toolReinforcement < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                                              {toolReinforcement > 0 ? '+' : ''}{toolReinforcement}
                                           </div>
-                                          {selectedToolId === tool.id && <Hammer className="w-4 h-4 text-blue-500 shrink-0" />}
-                                      </button>
-                                  ))}
+                                          <button onClick={() => setToolReinforcement(prev => Math.min(3, prev + 1))} className="p-2 border border-white/10 rounded hover:bg-white/10 text-gray-300 disabled:opacity-50" disabled={toolReinforcement >= 3}><Plus className="w-4 h-4" /></button>
+                                      </div>
+                                  </div>
                               </div>
                           )}
 
@@ -975,33 +1072,13 @@ export default function App() {
       {/* Right Sidebar Grimoire & Other Modals kept same */}
       <Grimoire history={grimoire} onSelect={handleGrimoireSelect} isOpen={isGrimoireOpen} onToggle={() => setIsGrimoireOpen(!isGrimoireOpen)} onDelete={(id) => handleDeleteSpell(id)} />
       
-      <CombatPanel isOpen={combatOpen} onClose={() => setCombatOpen(false)} enemy={activeEnemy} logs={combatLogs} onReset={handleResetCombat} onSelectEnemy={handleSelectEnemy} enemiesList={ENEMIES} />
+      {/* Combat Panel REMOVED */}
 
-      {/* Button Stack */}
+      {/* Button Stack - REMOVED COMBAT BUTTON */}
       <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-4">
         <button onClick={() => setIsGrimoireOpen(!isGrimoireOpen)} className={`p-3 border rounded-full backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] ${isGrimoireOpen ? 'bg-magic-gold text-black border-magic-gold' : 'bg-black/60 border-white/10 text-magic-gold hover:border-magic-gold'}`}><Book className="w-5 h-5" /></button>
-        <button onClick={() => setCombatOpen(!combatOpen)} className={`p-3 border rounded-full backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] ${combatOpen ? 'bg-red-500 text-white border-red-500' : 'bg-black/60 border-white/10 text-red-500 hover:border-red-500'}`}><Swords className="w-5 h-5" /></button>
-        <button onClick={() => setShowSettings(true)} className="p-3 bg-black/60 border border-white/10 text-gray-400 hover:text-white hover:border-magic-accent rounded-full backdrop-blur-md transition-all hover:rotate-90"><Settings className="w-5 h-5" /></button>
       </div>
 
-      <div className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
-          <button onClick={scrollToTop} className="p-3 bg-magic-accent hover:bg-magic-accent/80 text-white rounded-full shadow-lg shadow-magic-accent/30 transition-transform hover:-translate-y-1"><ArrowUp className="w-5 h-5" /></button>
-      </div>
-
-      {showSettings && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0a0a0f] border border-white/10 p-8 rounded-lg shadow-2xl max-w-md w-full relative">
-            <button onClick={() => setShowSettings(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
-            <h2 className="font-serif text-xl text-white mb-6 flex items-center gap-2"><Settings className="w-5 h-5 text-magic-accent" /> システム設定</h2>
-            <div className="space-y-6">
-              {/* ... Settings content ... */}
-              <div className="flex items-center justify-between"><div className="flex items-center gap-3"><Shield className="w-5 h-5 text-blue-400" /><div><div className="text-sm text-gray-200">高パフォーマンスモード</div><div className="text-xs text-gray-500">高度なパーティクルエフェクトを有効化</div></div></div><button onClick={() => setHighPerformance(!highPerformance)} className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${highPerformance ? 'bg-blue-500' : 'bg-gray-700'}`}><div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${highPerformance ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div>
-              <div className="flex items-center justify-between"><div className="flex items-center gap-3"><Volume2 className="w-5 h-5 text-purple-400" /><div><div className="text-sm text-gray-200">システムオーディオ</div><div className="text-xs text-gray-500">インターフェース音を有効化</div></div></div><button onClick={() => setAudioEnabled(!audioEnabled)} className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${audioEnabled ? 'bg-purple-500' : 'bg-gray-700'}`}><div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${audioEnabled ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div>
-              <div className="pt-6 border-t border-white/10"><button onClick={clearHistory} className="w-full py-3 border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded flex items-center justify-center gap-2 transition-colors text-xs uppercase tracking-widest"><Trash2 className="w-4 h-4" /> アーカイブ全消去</button></div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

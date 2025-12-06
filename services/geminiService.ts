@@ -1,4 +1,4 @@
-import { SpellAnalysis, MagicSystem, CasterStatus, SpellEnvironment, DivineProtectionDef, ToolDef, ManifestedSpell, EnemyDef, CharacterPreset } from "../types";
+import { SpellAnalysis, MagicSystem, CasterStatus, SpellEnvironment, DivineProtectionDef, ToolDef, ManifestedSpell, CharacterPreset } from "../types";
 
 // Mutable Data Table for runtime extension
 export let ATTRIBUTE_KEYWORDS: Record<string, { kanji: string, reading: string, tone: string }> = {
@@ -85,14 +85,6 @@ export let DEFAULT_TOOLS: ToolDef[] = [
     { id: 'tool_orb', name: '賢者の宝玉 (Sage Orb)', category: '宝玉', description: '魔力を貯蔵・増幅する。', compatibleSystems: [MagicSystem.CREATION, MagicSystem.DAWN], powerBonus: 1.4 },
     { id: 'tool_sword', name: '魔法剣 (Magic Sword)', category: '武具', description: '近接戦闘用の魔力付与武具。', compatibleSystems: [MagicSystem.ELEMENTAL, MagicSystem.OTHER], powerBonus: 1.2 },
     { id: 'tool_none', name: '素手 (Unarmed)', category: 'なし', description: '道具を使用しない。', compatibleSystems: [], powerBonus: 1.0 },
-];
-
-export const ENEMIES: EnemyDef[] = [
-    { id: 'dummy', name: '訓練用カカシ (Training Dummy)', maxHp: 10000, currentHp: 10000, attribute: '無属性', description: 'ただの木偶。サンドバッグ。' },
-    { id: 'slime', name: 'アビス・スライム (Abyss Slime)', maxHp: 5000, currentHp: 5000, attribute: '水属性', description: '物理攻撃を無効化する粘体。' },
-    { id: 'golem', name: 'ミスリルゴーレム (Mithril Golem)', maxHp: 30000, currentHp: 30000, attribute: '土属性', description: '魔法耐性を持つ古代の番人。' },
-    { id: 'spirit', name: '怒れる炎精 (Raging Ifrit)', maxHp: 15000, currentHp: 15000, attribute: '火属性', description: '暴走した精霊。近づくだけで熱い。' },
-    { id: 'dragon', name: '古龍ヴォルガノス (Elder Dragon)', maxHp: 100000, currentHp: 100000, attribute: '火属性', description: '伝説級の災厄。' }
 ];
 
 export const CHARACTER_PRESETS: CharacterPreset[] = [
@@ -192,7 +184,9 @@ export const constructSpell = async (
     toolId: string = 'tool_none', 
     environment: SpellEnvironment, 
     casterStatus: CasterStatus,
-    knownSpell?: Partial<ManifestedSpell>
+    knownSpell?: Partial<ManifestedSpell>,
+    toolReinforcement: number = 0, // New parameter for reinforcement
+    buffLevel: number = 0 // New parameter for buff/debuff (-5 to +5)
 ): Promise<SpellAnalysis> => {
   
   const attrData = ATTRIBUTE_KEYWORDS[attribute] || { kanji: attribute, reading: 'アンノウン', tone: 'neutral' };
@@ -225,6 +219,8 @@ export const constructSpell = async (
           environment,
           protection,
           tool,
+          toolReinforcement,
+          buffLevel,
           predictedDamage: art.predictedDamage,
           calculationFormula: '[HIDDEN COMMAND] DIVINE INTERVENTION DETECTED. LIMITERS RELEASED.',
           description: art.description,
@@ -324,8 +320,15 @@ export const constructSpell = async (
   if (tool.compatibleSystems.includes(system as MagicSystem)) {
       toolMult *= 1.2;
   }
+  // Apply Reinforcement
+  const reinforcementBonus = 1 + (toolReinforcement * 0.1); // -0.3 to +0.3
+  toolMult *= reinforcementBonus;
 
-  const finalDamage = Math.floor(baseDamageVal * internalMult * externalMult * protectionMult * toolMult);
+  // Apply Buff/Debuff
+  const buffBonus = 1 + (buffLevel * 0.2); // +/- 20% per level
+  const finalBuffMult = Math.max(0.1, buffBonus); // Minimum 0.1 multiplier
+
+  const finalDamage = Math.floor(baseDamageVal * internalMult * externalMult * protectionMult * toolMult * finalBuffMult);
 
   const formula = `
     [BASE] ${knownSpell ? 'Spell Power' : 'Rank Power'}: ${baseDamageVal.toLocaleString()}
@@ -338,13 +341,14 @@ export const constructSpell = async (
     
     [DIVINE] ${protection.name} (${protectionStatus}): x${protectionMult.toFixed(2)}
     
-    [TOOL] ${tool.name}: x${toolMult.toFixed(2)}
-    
+    [TOOL] ${tool.name} (Reinf: ${toolReinforcement > 0 ? '+' : ''}${toolReinforcement}): x${toolMult.toFixed(2)}
+    [BUFF] Resonance Amp: Lv${buffLevel} (x${finalBuffMult.toFixed(2)})
+
     --------------------------------
     TOTAL: ${finalDamage.toLocaleString()}
   `.trim();
 
-  const description = knownSpell?.description || `第${rank}環（リング）に属する${system}魔法。${rankData.theory}を応用し、対象領域に${attrData.kanji}属性の${rankData.effect}をもたらす。`;
+  const description = knownSpell?.description || `第${rank}環に属する${system}魔法。${rankData.theory}を応用し、対象領域に${attrData.kanji}属性の${rankData.effect}をもたらす。`;
 
   return {
     name: name,
@@ -361,6 +365,8 @@ export const constructSpell = async (
     
     protection: protection,
     tool: tool,
+    toolReinforcement,
+    buffLevel,
 
     predictedDamage: finalDamage,
     calculationFormula: formula,
@@ -373,8 +379,8 @@ export const constructSpell = async (
       condition: "視界確保",
       cost: rank > 5 ? "術者の生命力" : "大気中のマナ",
       theory: rankData.theory,
-      origin: "古代ヴェルナ文明",
-      famousUser: "大賢者アストラル"
+      origin: "古代文明",
+      famousUser: "不明"
     }
   };
 };

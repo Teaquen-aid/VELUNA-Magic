@@ -18,7 +18,6 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
     const [rank, setRank] = useState(1);
     const [damage, setDamage] = useState(100);
     const [description, setDescription] = useState('');
-    const [chant, setChant] = useState('');
     
     // Protection Field
     const [protectionId, setProtectionId] = useState('none');
@@ -34,7 +33,6 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
             setRank(initialData.rank);
             setDamage(initialData.predictedDamage);
             setDescription(initialData.description);
-            setChant(initialData.chantFeedback);
             setProtectionId(initialData.protection.id);
         } else {
             // Defaults for new spell
@@ -44,7 +42,6 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
             setRank(1);
             setDamage(100);
             setDescription('Manually registered spell effect.');
-            setChant('N/A');
             setProtectionId('none');
         }
     }, [initialData, isOpen]);
@@ -106,7 +103,7 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
             domain: attribute, // Simplify for manual
             rank,
             description,
-            chantFeedback: chant,
+            chantFeedback: "N/A", // Default placeholder
             visualPrompt: `Magic circle of ${attribute}`,
             eyeColor: '#ffffff', // Default white
             oipAmplitude: '0 Wm',
@@ -115,6 +112,8 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
             environment: initialData?.environment || defaultEnv,
             protection: selectedProtection,
             tool: initialData?.tool || DEFAULT_TOOLS.find(t => t.id === 'tool_none')!,
+            toolReinforcement: initialData?.toolReinforcement || 0,
+            buffLevel: initialData?.buffLevel || 0,
             predictedDamage: damage,
             lore: initialData?.lore || defaultLore,
             // Keep existing formula if editing, else simple string
@@ -236,17 +235,6 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
                                 onChange={(e) => setDescription(e.target.value)}
                                 className="w-full bg-black/40 border border-white/10 rounded p-2 text-xs text-gray-300 focus:border-magic-accent outline-none h-20"
                                 placeholder="Spell effects description..."
-                            />
-                        </div>
-                        
-                         {/* Chant */}
-                        <div>
-                            <label className="block text-[10px] uppercase font-mono text-gray-500 mb-1">Incantation</label>
-                            <textarea 
-                                value={chant}
-                                onChange={(e) => setChant(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded p-2 text-xs text-gray-300 focus:border-magic-accent outline-none h-16 italic"
-                                placeholder="Chant text..."
                             />
                         </div>
 
