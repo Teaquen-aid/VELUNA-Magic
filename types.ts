@@ -7,6 +7,9 @@ export enum MagicSystem {
   OTHER = 'その他'      // Other
 }
 
+export type GameMode = 'SIMULATION' | 'BATTLE';
+export type BattlePhase = 'SETUP' | 'PLAYER_TURN' | 'ENEMY_TURN' | 'VICTORY' | 'DEFEAT';
+
 export const SYSTEM_ATTRIBUTES: Record<MagicSystem, string[]> = {
   [MagicSystem.ELEMENTAL]: [
     '火属性', '水属性', '風属性', '土属性',
@@ -94,6 +97,14 @@ export interface ToolDef {
     powerBonus: number; // Base multiplier
 }
 
+export interface CharacterPreset {
+  id: string;
+  name: string;
+  protectionId: string;
+  activityRate: number;
+  description: string;
+}
+
 export interface SpellAnalysis {
   name: string; // The specific spell name
   system: MagicSystem; // The 5 Major Systems
@@ -125,6 +136,26 @@ export interface SpellAnalysis {
 export interface ManifestedSpell extends SpellAnalysis {
   id: string; // Format: MGxxxx
   timestamp: number;
+}
+
+export interface EnemyDef {
+    id: string;
+    name: string;
+    maxHp: number;
+    currentHp: number;
+    attribute: string;
+    description: string;
+    attackPower: number; // Added for Battle Mode
+}
+
+export interface CombatLogEntry {
+    id: string;
+    timestamp: number;
+    message: string;
+    damage?: number;
+    source?: 'PLAYER' | 'ENEMY';
+    isCritical?: boolean;
+    effectiveness?: 'SUPER' | 'NORMAL' | 'POOR' | 'MISS' | 'HEAL' | 'BUFF';
 }
 
 export type AppState = 'IDLE' | 'ANALYZING' | 'MANIFESTING' | 'COMPLETE' | 'ERROR';
