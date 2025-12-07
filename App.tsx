@@ -836,6 +836,28 @@ export default function App() {
                           <SensorData icon={<CloudFog size={14} />} label="Humidity" value={envData.humidity.toString()} unit="%" />
                       </div>
                        <div className="bg-white/5 border border-white/5 rounded p-1.5 flex items-center gap-2"><MapPin className="w-3 h-3 text-gray-500 shrink-0" /><div className="text-[9px] font-mono text-gray-400 truncate">{envData.location.lat.toFixed(4)}, {envData.location.lng.toFixed(4)} <span className="text-gray-600">|</span> Alt: {envData.location.alt}m</div></div>
+                       
+                       {/* Coordinate Map Visualization */}
+                       <div className="relative w-full h-16 bg-black/50 border border-white/10 rounded mt-2 overflow-hidden group">
+                           {/* Grid Lines */}
+                           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+                           <div className="absolute top-1/2 left-0 w-full h-[1px] bg-white/20"></div>
+                           <div className="absolute left-1/2 top-0 h-full w-[1px] bg-white/20"></div>
+
+                           {/* Target Dot */}
+                           <div
+                               className="absolute w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_#ef4444] transition-all duration-1000 ease-out z-10"
+                               style={{
+                                   top: '50%',
+                                   left: '50%',
+                                   transform: `translate(calc(-50% + ${(envData.location.lng - 139) * 20}px), calc(-50% + ${-(envData.location.lat - 35) * 20}px))`
+                               }}
+                           >
+                              <div className="absolute inset-0 animate-ping bg-red-500 rounded-full opacity-75"></div>
+                           </div>
+                           
+                           <div className="absolute bottom-1 right-1 text-[8px] font-mono text-gray-600">OFFSET MAPPING</div>
+                       </div>
                    </div>
                 </div>
 

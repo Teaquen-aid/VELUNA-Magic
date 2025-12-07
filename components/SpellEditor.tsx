@@ -18,6 +18,7 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
     const [rank, setRank] = useState(1);
     const [damage, setDamage] = useState(100);
     const [description, setDescription] = useState('');
+    const [buffLevel, setBuffLevel] = useState(0);
     
     // Protection Field
     const [protectionId, setProtectionId] = useState('none');
@@ -34,6 +35,7 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
             setDamage(initialData.predictedDamage);
             setDescription(initialData.description);
             setProtectionId(initialData.protection.id);
+            setBuffLevel(initialData.buffLevel || 0);
         } else {
             // Defaults for new spell
             setName('Unnamed Spell');
@@ -43,6 +45,7 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
             setDamage(100);
             setDescription('Manually registered spell effect.');
             setProtectionId('none');
+            setBuffLevel(0);
         }
     }, [initialData, isOpen]);
 
@@ -103,7 +106,7 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
             domain: attribute, // Simplify for manual
             rank,
             description,
-            chantFeedback: "N/A", // Default placeholder
+            chantFeedback: "N/A", // Chant removed from UI, defaulting to N/A
             visualPrompt: `Magic circle of ${attribute}`,
             eyeColor: '#ffffff', // Default white
             oipAmplitude: '0 Wm',
@@ -113,7 +116,7 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
             protection: selectedProtection,
             tool: initialData?.tool || DEFAULT_TOOLS.find(t => t.id === 'tool_none')!,
             toolReinforcement: initialData?.toolReinforcement || 0,
-            buffLevel: initialData?.buffLevel || 0,
+            buffLevel: buffLevel,
             predictedDamage: damage,
             lore: initialData?.lore || defaultLore,
             // Keep existing formula if editing, else simple string
@@ -198,6 +201,29 @@ const SpellEditor: React.FC<SpellEditorProps> = ({ isOpen, onClose, onSave, init
                                     <option key={p.id} value={p.id}>[{p.category}] {p.name}</option>
                                 ))}
                             </select>
+                        </div>
+
+                        {/* Buff/Debuff Control (Resonance Amp) */}
+                        <div className="bg-black/40 border border-white/10 rounded p-3">
+                            <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-3 flex justify-between">
+                                <span>Resonance Amp</span>
+                                <span className={buffLevel > 0 ? 'text-cyan-400' : buffLevel < 0 ? 'text-pink-500' : 'text-gray-400'}>
+                                    {buffLevel > 0 ? '+' : ''}{buffLevel * 20}%
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="text-[10px] font-mono text-pink-500">-5</div>
+                                <input 
+                                    type="range" 
+                                    min="-5" 
+                                    max="5" 
+                                    step="1" 
+                                    value={buffLevel}
+                                    onChange={(e) => setBuffLevel(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                                />
+                                <div className="text-[10px] font-mono text-cyan-400">+5</div>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

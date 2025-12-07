@@ -159,16 +159,18 @@ export const RING_DATA: Record<number, { name: string; alias: string }> = {
   4: { name: "複合圏域制御 (Composite Domain Control)", alias: "中級魔術 (Intermediate Magic)" },
   5: { name: "自然級干渉 (Natural Scale Interference)", alias: "上級魔術 (Advanced Magic)" },
   6: { name: "儀式的共鳴 (Ritual Resonance)", alias: "最上級魔術 (Supreme Magic)" },
-  7: { name: "根源改変 (Origin Modification)", alias: "特級魔術 (Special Magic)" },
+  7: { name: "根源接続 (Root Connection)", alias: "神代魔法 (Divine Magic)" }
 };
 
 export interface EnemyDef {
   id: string;
   name: string;
-  currentHp: number;
-  maxHp: number;
-  attribute: string;
   description: string;
+  maxHp: number;
+  currentHp: number;
+  attribute: string;
+  resistance?: string[];
+  weakness?: string[];
 }
 
 export interface CombatLogEntry {
@@ -177,5 +179,5 @@ export interface CombatLogEntry {
   message: string;
   damage?: number;
   isCritical?: boolean;
-  effectiveness?: 'NORMAL' | 'SUPER' | 'POOR' | 'IMMUNE';
+  effectiveness?: 'SUPER' | 'POOR' | 'NORMAL' | 'IMMUNE';
 }
